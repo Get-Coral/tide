@@ -7,12 +7,15 @@ export const Route = createFileRoute("/")({
 	component: Home,
 });
 
+type SortMode = "activity" | "name" | "progress" | "speed" | "size" | "status";
+
 function Home() {
 	const [items, setItems] = useState<TorrentSnapshot[]>([]);
 	const [magnet, setMagnet] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [sortMode, setSortMode] = useState<SortMode>("activity");
 
 	useEffect(() => {
 		let active = true;
@@ -79,6 +82,12 @@ function Home() {
 		const combinedSpeed = items.reduce((total, item) => total + item.downloadSpeed, 0);
 		return { active, done, combinedSpeed };
 	}, [items]);
+
+	const sortedItems = useMemo(() => {
+		const next = [...items];
+		next.sort((left, right) => compareTorrents(left, right, sortMode));
+		return next;
+	}, [items, sortMode]);
 
 	async function handleAdd(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
@@ -160,6 +169,24 @@ function Home() {
 					title="Current torrents"
 					subtitle="Live updates are streamed from the server."
 				>
+					<div className="tide-sort-row">
+						<label htmlFor="tide-sort" className="tide-sort-label">
+							Sort
+						</label>
+						<select
+							id="tide-sort"
+							className="tide-sort-select"
+							value={sortMode}
+							onChange={(event) => setSortMode(event.target.value as SortMode)}
+						>
+							<option value="activity">Recent activity</option>
+							<option value="progress">Progress</option>
+							<option value="speed">Download speed</option>
+							<option value="status">Status</option>
+							<option value="size">Size</option>
+							<option value="name">Name</option>
+						</select>
+					</div>
 					{loading ? <p className="text-ink-muted">Loading torrents...</p> : null}
 					{!loading && items.length === 0 ? (
 						<CoralCard>
@@ -167,7 +194,7 @@ function Home() {
 						</CoralCard>
 					) : null}
 					<div className="tide-list">
-						{items.map((item) => (
+						{sortedItems.map((item) => (
 							<CoralCard key={item.id}>
 								<article className="tide-item">
 									<div className="tide-item-head">
@@ -242,4 +269,39 @@ function formatBytes(bytes: number) {
 
 function formatSpeed(bytesPerSecond: number) {
 	return `${formatBytes(bytesPerSecond)}/s`;
+}
+
+function compareTorrents(a: TorrentSnapshot, b: TorrentSnapshot, mode: SortMode) {
+	if (mode === "name") {
+		return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+	}
+
+	if (mode === "progress") {
+		return b.progress - a.progress;
+	}
+
+	if (mode === "speed") {
+		return b.downloadSpeed - a.downloadSpeed;
+	}
+
+	if (mode === "size") {
+		return b.length - a.length;
+	}
+
+	if (mode === "status") {
+		const aRank = a.done ? 1 : 0;
+		const bRank = b.done ? 1 : 0;
+		if (aRank !== bRank) {
+			return aRank - bRank;
+		}
+		return b.progress - a.progress;
+	}
+
+	const aTime = new Date(a.createdAt).getTime();
+	const bTime = new Date(b.createdAt).getTime();
+	if (Number.isFinite(aTime) && Number.isFinite(bTime) && aTime !== bTime) {
+		return bTime - aTime;
+	}
+
+	return b.downloadSpeed - a.downloadSpeed;
 }

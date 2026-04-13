@@ -84,6 +84,27 @@
   gap: 0.75rem;
 }
 
+.tide-sort-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.tide-sort-label {
+  font-size: 0.8rem;
+  color: var(--color-ink-muted);
+}
+
+.tide-sort-select {
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-deep);
+  color: var(--color-ink);
+  font-size: 0.82rem;
+  padding: 0.4rem 0.65rem;
+}
+
 .tide-item {
   display: grid;
   gap: 0.85rem;
