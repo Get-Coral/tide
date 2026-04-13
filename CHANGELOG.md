@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0 (2026-04-13)
+
+
+### Features
+
+* add simple prottotype ([55852ab](https://github.com/Get-Coral/tide/commit/55852abce282e83791403e576adfc69fc876b173))
+* add sorter ([da18068](https://github.com/Get-Coral/tide/commit/da180689940df1c6bafd3fda004d4b6e41e20c3d))
+* boostrap core ([8d030e9](https://github.com/Get-Coral/tide/commit/8d030e9d200d79f3ed64e0e0982d826ef9d79c1d))
+* enhance torrent management UI with global swarm metrics and improved sorting options ([45299ef](https://github.com/Get-Coral/tide/commit/45299efebdc69378221d8569bdf4c4b4d9d176fc))
+* implement controls ([01a1f65](https://github.com/Get-Coral/tide/commit/01a1f65405703f1210234e70b36c18c9b7e29187))
+* implement settings ([cae51a4](https://github.com/Get-Coral/tide/commit/cae51a4cf83c49f2b13d865c600c82c3b34a0551))
+
 ## [1.0.1](https://github.com/Get-Coral/template/compare/v1.0.0...v1.0.1) (2026-04-13)
 
 
