@@ -9,8 +9,10 @@ export const Route = createFileRoute("/api/torrents/")({
 	server: {
 		handlers: {
 			GET: async () => {
-				const { listTorrents } = await import("#/server/modules/torrent/manager");
-				return Response.json({ items: listTorrents() });
+				const { getGlobalSettings, listTorrents } = await import(
+					"#/server/modules/torrent/manager"
+				);
+				return Response.json({ items: listTorrents(), global: getGlobalSettings() });
 			},
 			POST: async ({ request }) => {
 				const payload = (await request.json()) as AddTorrentBody;
