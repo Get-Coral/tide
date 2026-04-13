@@ -68,10 +68,24 @@ export function compareTorrents(a: TorrentSnapshot, b: TorrentSnapshot, mode: To
 		return order.indexOf(a.state) - order.indexOf(b.state);
 	}
 
-	const aTime = new Date(a.createdAt).getTime();
-	const bTime = new Date(b.createdAt).getTime();
+	const aTime = getRecentlyAddedTime(a);
+	const bTime = getRecentlyAddedTime(b);
 	if (Number.isFinite(aTime) && Number.isFinite(bTime) && aTime !== bTime) {
 		return bTime - aTime;
 	}
-	return a.control.queueOrder - b.control.queueOrder;
+	return b.control.queueOrder - a.control.queueOrder;
+}
+
+function getRecentlyAddedTime(item: TorrentSnapshot) {
+	const addedAt = new Date(item.control.addedAt).getTime();
+	if (Number.isFinite(addedAt)) {
+		return addedAt;
+	}
+
+	const createdAt = new Date(item.createdAt).getTime();
+	if (Number.isFinite(createdAt)) {
+		return createdAt;
+	}
+
+	return Number.NaN;
 }

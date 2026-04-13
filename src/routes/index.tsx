@@ -12,7 +12,9 @@ import {
 	createTorrent,
 	type GlobalTorrentSettings,
 	listTorrents,
+	type TorrentPieceBucketSnapshot,
 	type TorrentSnapshot,
+	type TorrentTrackerSnapshot,
 	updateTorrentControl,
 } from "#/lib/torrents";
 
@@ -116,6 +118,8 @@ function Home() {
 		if (filterMode === "all") return items;
 		return items.filter((item) => item.state === filterMode);
 	}, [filterMode, items]);
+
+	const globalSwarm = useMemo(() => buildGlobalSwarmSnapshot(filteredItems), [filteredItems]);
 
 	const sortedItems = useMemo(() => {
 		const next = [...filteredItems];
@@ -277,7 +281,7 @@ function Home() {
 								value={sortMode}
 								onChange={(event) => setSortMode(event.target.value as TorrentSortMode)}
 							>
-								<option value="activity">Recent activity</option>
+								<option value="activity">Recently added</option>
 								<option value="progress">Progress</option>
 								<option value="speed">Download speed</option>
 								<option value="status">Status</option>
@@ -292,6 +296,92 @@ function Home() {
 					{!loading && sortedItems.length === 0 ? (
 						<CoralCard className="tide-empty-card">
 							<p className="text-ink-muted">No torrents match this filter.</p>
+						</CoralCard>
+					) : null}
+
+					{!loading && filteredItems.length > 0 ? (
+						<CoralCard className="tide-global-card">
+							<div className="tide-drawer-section__head">
+								<div>
+									<p className="tide-metric-label">Global swarm</p>
+									<h2 className="tide-drawer__title">All active pieces</h2>
+								</div>
+								<span className="text-ink-muted">
+									Across {filteredItems.length} torrent{filteredItems.length === 1 ? "" : "s"}
+								</span>
+							</div>
+
+							<div className="tide-mini-grid tide-mini-grid--details">
+								<MiniStat
+									label="Selected pieces"
+									value={formatCompactNumber(globalSwarm.selectedPieces)}
+								/>
+								<MiniStat
+									label="Completed pieces"
+									value={formatCompactNumber(globalSwarm.completedPieces)}
+								/>
+								<MiniStat
+									label="Visible peers"
+									value={formatCompactNumber(globalSwarm.peerCount)}
+								/>
+								<MiniStat
+									label="Trackers up"
+									value={`${globalSwarm.activeTrackerCount}/${globalSwarm.trackerCount}`}
+								/>
+							</div>
+
+							<div className="tide-drawer-summary">
+								<div>
+									<p className="tide-label">Overview</p>
+									<p className="text-ink-muted">
+										Each block blends queue selection, completion, and tracker activity across the
+										current board filter.
+									</p>
+								</div>
+								<div className="tide-peer-metrics">
+									<span>{formatBytes(globalSwarm.totalLength)} queued</span>
+									<span>{formatBytes(globalSwarm.totalDownloaded)} downloaded</span>
+									<span>{formatSpeed(globalSwarm.totalDownloadSpeed)} down</span>
+									<span>{formatSpeed(globalSwarm.totalUploadSpeed)} up</span>
+								</div>
+							</div>
+
+							<section className="tide-drawer-section">
+								<div className="tide-drawer-section__head">
+									<h3>Combined piece map</h3>
+									<span>{globalSwarm.bucketCount} buckets</span>
+								</div>
+								<div className="tide-piece-map tide-piece-map--global">
+									{globalSwarm.pieceMap.map((bucket) => (
+										<div
+											key={`global-${bucket.index}`}
+											className={`tide-piece-cell ${bucket.selected ? "is-selected" : "is-deselected"}`}
+											style={{
+												opacity: Math.max(0.22, bucket.completionRate),
+												backgroundColor:
+													bucket.completionRate >= 1
+														? "rgba(101, 200, 184, 0.95)"
+														: `rgba(242, 136, 98, ${0.18 + bucket.availabilityRate * 0.2})`,
+											}}
+											title={`${Math.round(bucket.completionRate * 100)}% complete · ${Math.round(
+												bucket.availabilityRate * 100,
+											)}% availability`}
+										/>
+									))}
+								</div>
+							</section>
+
+							<section className="tide-global-footer">
+								<div className="tide-stack-row">
+									<p className="tide-label">Tracker health</p>
+									<div className="tide-peer-metrics">
+										<span>{globalSwarm.activeTrackerCount} active</span>
+										<span>{globalSwarm.warningTrackerCount} warning</span>
+										<span>{globalSwarm.noPeerTrackerCount} no-peers</span>
+										<span>{globalSwarm.idleTrackerCount} idle</span>
+									</div>
+								</div>
+							</section>
 						</CoralCard>
 					) : null}
 
@@ -539,4 +629,80 @@ function MiniStat({ label, value }: { label: string; value: string }) {
 			<p className="tide-mini-stat__value">{value}</p>
 		</div>
 	);
+}
+
+function buildGlobalSwarmSnapshot(items: TorrentSnapshot[]) {
+	const pieceMap = mergePieceMaps(items);
+	const trackers = items.flatMap((item) => item.details.trackers);
+
+	return {
+		pieceMap,
+		bucketCount: pieceMap.length,
+		selectedPieces: items.reduce((total, item) => total + item.details.selectedPieces, 0),
+		completedPieces: items.reduce((total, item) => total + item.details.completedPieces, 0),
+		peerCount: items.reduce((total, item) => total + item.details.peers.length, 0),
+		totalLength: items.reduce((total, item) => total + item.length, 0),
+		totalDownloaded: items.reduce((total, item) => total + item.downloaded, 0),
+		totalDownloadSpeed: items.reduce((total, item) => total + item.downloadSpeed, 0),
+		totalUploadSpeed: items.reduce((total, item) => total + item.uploadSpeed, 0),
+		trackerCount: trackers.length,
+		activeTrackerCount: countTrackersByStatus(trackers, "active"),
+		warningTrackerCount: countTrackersByStatus(trackers, "warning"),
+		noPeerTrackerCount: countTrackersByStatus(trackers, "no-peers"),
+		idleTrackerCount: countTrackersByStatus(trackers, "idle"),
+	};
+}
+
+function mergePieceMaps(items: TorrentSnapshot[]): TorrentPieceBucketSnapshot[] {
+	const pieceMaps = items
+		.map((item) => item.details.pieceMap)
+		.filter((pieceMap) => pieceMap.length > 0);
+	if (pieceMaps.length === 0) {
+		return [];
+	}
+
+	const bucketCount = Math.max(...pieceMaps.map((pieceMap) => pieceMap.length));
+	return Array.from({ length: bucketCount }, (_, index) => {
+		const buckets = pieceMaps.map((pieceMap) => pieceMap[index]).filter(Boolean);
+		if (buckets.length === 0) {
+			return {
+				index,
+				startPiece: 0,
+				endPiece: 0,
+				completionRate: 0,
+				availabilityRate: 0,
+				selected: false,
+			};
+		}
+
+		return {
+			index,
+			startPiece: Math.min(...buckets.map((bucket) => bucket.startPiece)),
+			endPiece: Math.max(...buckets.map((bucket) => bucket.endPiece)),
+			completionRate:
+				buckets.reduce((total, bucket) => total + bucket.completionRate, 0) / buckets.length,
+			availabilityRate: Math.min(
+				1,
+				buckets.reduce((total, bucket) => total + bucket.availabilityRate, 0) / buckets.length,
+			),
+			selected: buckets.some((bucket) => bucket.selected),
+		};
+	});
+}
+
+function countTrackersByStatus(
+	trackers: TorrentTrackerSnapshot[],
+	status: TorrentTrackerSnapshot["status"],
+) {
+	return trackers.filter((tracker) => tracker.status === status).length;
+}
+
+function formatCompactNumber(value: number) {
+	if (!Number.isFinite(value) || value <= 0) {
+		return "0";
+	}
+	return new Intl.NumberFormat(undefined, {
+		maximumFractionDigits: value >= 1000 ? 1 : 0,
+		notation: value >= 1000 ? "compact" : "standard",
+	}).format(value);
 }

@@ -204,7 +204,7 @@ function ManageRoute() {
 								value={sortMode}
 								onChange={(event) => setSortMode(event.target.value as TorrentSortMode)}
 							>
-								<option value="activity">Recent activity</option>
+								<option value="activity">Recently added</option>
 								<option value="progress">Progress</option>
 								<option value="speed">Download speed</option>
 								<option value="status">Status</option>
