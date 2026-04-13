@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ManageRouteImport } from './routes/manage'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTorrentsIndexRouteImport } from './routes/api/torrents/index'
 import { Route as ApiTorrentsEventsRouteImport } from './routes/api/torrents/events'
@@ -16,6 +17,11 @@ import { Route as ApiTorrentsControlRouteImport } from './routes/api/torrents/co
 import { Route as ApiTorrentsIdIndexRouteImport } from './routes/api/torrents/$id/index'
 import { Route as ApiTorrentsIdStreamRouteImport } from './routes/api/torrents/$id/stream'
 
+const ManageRoute = ManageRouteImport.update({
+  id: '/manage',
+  path: '/manage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -49,6 +55,7 @@ const ApiTorrentsIdStreamRoute = ApiTorrentsIdStreamRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/manage': typeof ManageRoute
   '/api/torrents/control': typeof ApiTorrentsControlRoute
   '/api/torrents/events': typeof ApiTorrentsEventsRoute
   '/api/torrents/': typeof ApiTorrentsIndexRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/manage': typeof ManageRoute
   '/api/torrents/control': typeof ApiTorrentsControlRoute
   '/api/torrents/events': typeof ApiTorrentsEventsRoute
   '/api/torrents': typeof ApiTorrentsIndexRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/manage': typeof ManageRoute
   '/api/torrents/control': typeof ApiTorrentsControlRoute
   '/api/torrents/events': typeof ApiTorrentsEventsRoute
   '/api/torrents/': typeof ApiTorrentsIndexRoute
@@ -76,6 +85,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/manage'
     | '/api/torrents/control'
     | '/api/torrents/events'
     | '/api/torrents/'
@@ -84,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/manage'
     | '/api/torrents/control'
     | '/api/torrents/events'
     | '/api/torrents'
@@ -92,6 +103,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/manage'
     | '/api/torrents/control'
     | '/api/torrents/events'
     | '/api/torrents/'
@@ -101,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ManageRoute: typeof ManageRoute
   ApiTorrentsControlRoute: typeof ApiTorrentsControlRoute
   ApiTorrentsEventsRoute: typeof ApiTorrentsEventsRoute
   ApiTorrentsIndexRoute: typeof ApiTorrentsIndexRoute
@@ -110,6 +123,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/manage': {
+      id: '/manage'
+      path: '/manage'
+      fullPath: '/manage'
+      preLoaderRoute: typeof ManageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -157,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ManageRoute: ManageRoute,
   ApiTorrentsControlRoute: ApiTorrentsControlRoute,
   ApiTorrentsEventsRoute: ApiTorrentsEventsRoute,
   ApiTorrentsIndexRoute: ApiTorrentsIndexRoute,

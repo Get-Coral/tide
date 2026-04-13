@@ -2,6 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Readable } from 'node:stream';
+import { timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -31,6 +32,13 @@ const { default: serverEntry } = await import('./dist/server/server.js');
 
 const host = process.env.HOST ?? '0.0.0.0';
 const port = Number.parseInt(process.env.PORT ?? '3000', 10);
+const basicAuthUsername = process.env.TIDE_AUTH_USERNAME?.trim() ?? '';
+const basicAuthPassword = process.env.TIDE_AUTH_PASSWORD?.trim() ?? '';
+const basicAuthConfigured = Boolean(basicAuthUsername || basicAuthPassword);
+
+if (basicAuthConfigured && (!basicAuthUsername || !basicAuthPassword)) {
+  throw new Error('TIDE basic auth requires both TIDE_AUTH_USERNAME and TIDE_AUTH_PASSWORD.');
+}
 
 const CLIENT_DIR = path.join(__dirname, 'dist', 'client');
 const MIME = {
@@ -71,6 +79,40 @@ function serveStatic(url, res) {
   return true;
 }
 
+function constantTimeMatch(left, right) {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  if (leftBuffer.length !== rightBuffer.length) return false;
+  return timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function isAuthorized(req) {
+  if (!basicAuthConfigured) return true;
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith('Basic ')) return false;
+
+  try {
+    const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
+    const separator = decoded.indexOf(':');
+    if (separator < 0) return false;
+    const username = decoded.slice(0, separator);
+    const password = decoded.slice(separator + 1);
+    return (
+      constantTimeMatch(username, basicAuthUsername) &&
+      constantTimeMatch(password, basicAuthPassword)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function rejectUnauthorized(res) {
+  res.statusCode = 401;
+  res.setHeader('www-authenticate', 'Basic realm="Tide"');
+  res.setHeader('content-type', 'text/plain; charset=utf-8');
+  res.end('Authentication required.');
+}
+
 const nodeServer = http.createServer(async (req, res) => {
   try {
     const origin = `http://${req.headers.host ?? `${host}:${port}`}`;
@@ -79,6 +121,11 @@ const nodeServer = http.createServer(async (req, res) => {
     if (url.pathname === '/healthz') {
       res.writeHead(204);
       res.end();
+      return;
+    }
+
+    if (!isAuthorized(req)) {
+      rejectUnauthorized(res);
       return;
     }
 

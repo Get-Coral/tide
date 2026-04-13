@@ -26,7 +26,7 @@ pnpm install
 
 ```bash
 cp .env.example .env
-# Fill in your Jellyfin URL, API key, and user ID
+# Set your downloads directory, optional auth, and any other Tide settings
 ```
 
 ### 4. Start developing
@@ -75,9 +75,9 @@ docker build -t tide .
 
 # Run
 docker run -p 3000:3000 \
-  -e JELLYFIN_URL=http://your-nas:8096 \
-  -e JELLYFIN_API_KEY=your-key \
-  -e JELLYFIN_USER_ID=your-user-id \
+  -e TIDE_DOWNLOADS_DIR=/downloads \
+  -e TIDE_AUTH_USERNAME=admin \
+  -e TIDE_AUTH_PASSWORD=change-me \
   tide
 ```
 

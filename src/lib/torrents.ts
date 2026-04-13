@@ -6,12 +6,54 @@ export interface TorrentFileSnapshot {
 	progress: number;
 	selected: boolean;
 	priority: number;
+	firstPiece: number;
+	lastPiece: number;
 }
 
-export type TorrentState = "downloading" | "seeding" | "paused" | "errored" | "idle";
+export type TorrentState = "downloading" | "seeding" | "paused" | "queued" | "errored" | "idle";
+
+export interface TorrentTrackerSnapshot {
+	url: string;
+	status: "active" | "idle" | "warning" | "no-peers";
+	lastAnnounceAt: string | null;
+	lastError: string | null;
+}
+
+export interface TorrentPeerSnapshot {
+	id: string;
+	address: string;
+	client: string;
+	progress: number | null;
+	downloadSpeed: number | null;
+	uploadSpeed: number | null;
+	requestedPieces: number;
+	choked: boolean;
+	interested: boolean;
+	type: string;
+}
+
+export interface TorrentPieceBucketSnapshot {
+	index: number;
+	startPiece: number;
+	endPiece: number;
+	completionRate: number;
+	availabilityRate: number;
+	selected: boolean;
+}
+
+export interface TorrentDetailSnapshot {
+	pieceCount: number;
+	pieceLength: number;
+	completedPieces: number;
+	selectedPieces: number;
+	pieceMap: TorrentPieceBucketSnapshot[];
+	peers: TorrentPeerSnapshot[];
+	trackers: TorrentTrackerSnapshot[];
+}
 
 export interface TorrentControlState {
 	paused: boolean;
+	pausedByQueue: boolean;
 	queueOrder: number;
 	downloadLimitBps: number | null;
 	uploadLimitBps: number | null;
@@ -30,6 +72,16 @@ export interface TorrentControlState {
 export interface GlobalTorrentSettings {
 	downloadLimitBps: number | null;
 	uploadLimitBps: number | null;
+	maxActiveDownloads: number | null;
+	maxActiveSeeders: number | null;
+}
+
+export interface AppTorrentSettingsSummary {
+	downloadsDirectory: string;
+	downloadsEnvVar: string;
+	databasePath: string;
+	basicAuthEnabled: boolean;
+	basicAuthUsername: string | null;
 }
 
 export interface TorrentSnapshot {
@@ -51,6 +103,7 @@ export interface TorrentSnapshot {
 	timeRemainingMs: number;
 	files: TorrentFileSnapshot[];
 	control: TorrentControlState;
+	details: TorrentDetailSnapshot;
 }
 
 interface ListResponse {
@@ -81,12 +134,30 @@ async function parseError(response: Response) {
 	try {
 		const text = await response.text();
 		if (text) {
-			message = text;
+			message = sanitizeErrorText(text, message);
 		}
 	} catch {
 		// ignore parse failure and keep status message
 	}
 	return message;
+}
+
+function sanitizeErrorText(text: string, fallback: string) {
+	const trimmed = text.trim();
+	if (!trimmed) {
+		return fallback;
+	}
+
+	const isHtmlDocument =
+		trimmed.startsWith("<!DOCTYPE") ||
+		trimmed.startsWith("<html") ||
+		trimmed.includes("<body") ||
+		trimmed.includes("</html>");
+	if (isHtmlDocument) {
+		return `${fallback}. Server returned an unexpected HTML page.`;
+	}
+
+	return trimmed.length > 240 ? `${trimmed.slice(0, 237)}...` : trimmed;
 }
 
 export async function listTorrents() {
@@ -131,6 +202,14 @@ export async function updateGlobalTorrentSettings(input: Partial<GlobalTorrentSe
 	}
 	const payload = (await response.json()) as { global: GlobalTorrentSettings };
 	return payload.global;
+}
+
+export async function getAppTorrentSettingsSummary() {
+	const response = await fetch("/api/torrents/control", { method: "GET" });
+	if (!response.ok) {
+		throw new Error(await parseError(response));
+	}
+	return (await response.json()) as { app: AppTorrentSettingsSummary };
 }
 
 export async function updateTorrentControl(id: string, input: TorrentControlInput) {

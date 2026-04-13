@@ -6,12 +6,54 @@ export interface TorrentFileSnapshot {
 	progress: number;
 	selected: boolean;
 	priority: number;
+	firstPiece: number;
+	lastPiece: number;
 }
 
-export type TorrentState = "downloading" | "seeding" | "paused" | "errored" | "idle";
+export type TorrentState = "downloading" | "seeding" | "paused" | "queued" | "errored" | "idle";
+
+export interface TorrentTrackerSnapshot {
+	url: string;
+	status: "active" | "idle" | "warning" | "no-peers";
+	lastAnnounceAt: string | null;
+	lastError: string | null;
+}
+
+export interface TorrentPeerSnapshot {
+	id: string;
+	address: string;
+	client: string;
+	progress: number | null;
+	downloadSpeed: number | null;
+	uploadSpeed: number | null;
+	requestedPieces: number;
+	choked: boolean;
+	interested: boolean;
+	type: string;
+}
+
+export interface TorrentPieceBucketSnapshot {
+	index: number;
+	startPiece: number;
+	endPiece: number;
+	completionRate: number;
+	availabilityRate: number;
+	selected: boolean;
+}
+
+export interface TorrentDetailSnapshot {
+	pieceCount: number;
+	pieceLength: number;
+	completedPieces: number;
+	selectedPieces: number;
+	pieceMap: TorrentPieceBucketSnapshot[];
+	peers: TorrentPeerSnapshot[];
+	trackers: TorrentTrackerSnapshot[];
+}
 
 export interface TorrentControlState {
 	paused: boolean;
+	pausedByQueue: boolean;
 	queueOrder: number;
 	downloadLimitBps: number | null;
 	uploadLimitBps: number | null;
@@ -46,11 +88,14 @@ export interface TorrentSnapshot {
 	timeRemainingMs: number;
 	files: TorrentFileSnapshot[];
 	control: TorrentControlState;
+	details: TorrentDetailSnapshot;
 }
 
 export interface GlobalTorrentSettings {
 	downloadLimitBps: number | null;
 	uploadLimitBps: number | null;
+	maxActiveDownloads: number | null;
+	maxActiveSeeders: number | null;
 }
 
 export interface AddTorrentInput {

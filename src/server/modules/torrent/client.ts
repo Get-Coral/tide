@@ -3,7 +3,8 @@ import path from "node:path";
 import WebTorrent from "webtorrent";
 
 function getDownloadsPath() {
-	const configuredPath = process.env.TORRENT_DOWNLOADS_DIR?.trim();
+	const configuredPath =
+		process.env.TIDE_DOWNLOADS_DIR?.trim() || process.env.TORRENT_DOWNLOADS_DIR?.trim();
 	const resolved = configuredPath
 		? path.resolve(configuredPath)
 		: path.resolve(process.cwd(), "data", "downloads");
