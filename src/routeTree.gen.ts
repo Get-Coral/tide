@@ -10,33 +10,89 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiTorrentsIndexRouteImport } from './routes/api/torrents/index'
+import { Route as ApiTorrentsEventsRouteImport } from './routes/api/torrents/events'
+import { Route as ApiTorrentsIdIndexRouteImport } from './routes/api/torrents/$id/index'
+import { Route as ApiTorrentsIdStreamRouteImport } from './routes/api/torrents/$id/stream'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTorrentsIndexRoute = ApiTorrentsIndexRouteImport.update({
+  id: '/api/torrents/',
+  path: '/api/torrents/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTorrentsEventsRoute = ApiTorrentsEventsRouteImport.update({
+  id: '/api/torrents/events',
+  path: '/api/torrents/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTorrentsIdIndexRoute = ApiTorrentsIdIndexRouteImport.update({
+  id: '/api/torrents/$id/',
+  path: '/api/torrents/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTorrentsIdStreamRoute = ApiTorrentsIdStreamRouteImport.update({
+  id: '/api/torrents/$id/stream',
+  path: '/api/torrents/$id/stream',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/torrents/events': typeof ApiTorrentsEventsRoute
+  '/api/torrents/': typeof ApiTorrentsIndexRoute
+  '/api/torrents/$id/stream': typeof ApiTorrentsIdStreamRoute
+  '/api/torrents/$id/': typeof ApiTorrentsIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/torrents/events': typeof ApiTorrentsEventsRoute
+  '/api/torrents': typeof ApiTorrentsIndexRoute
+  '/api/torrents/$id/stream': typeof ApiTorrentsIdStreamRoute
+  '/api/torrents/$id': typeof ApiTorrentsIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/torrents/events': typeof ApiTorrentsEventsRoute
+  '/api/torrents/': typeof ApiTorrentsIndexRoute
+  '/api/torrents/$id/stream': typeof ApiTorrentsIdStreamRoute
+  '/api/torrents/$id/': typeof ApiTorrentsIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/api/torrents/events'
+    | '/api/torrents/'
+    | '/api/torrents/$id/stream'
+    | '/api/torrents/$id/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/api/torrents/events'
+    | '/api/torrents'
+    | '/api/torrents/$id/stream'
+    | '/api/torrents/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/torrents/events'
+    | '/api/torrents/'
+    | '/api/torrents/$id/stream'
+    | '/api/torrents/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiTorrentsEventsRoute: typeof ApiTorrentsEventsRoute
+  ApiTorrentsIndexRoute: typeof ApiTorrentsIndexRoute
+  ApiTorrentsIdStreamRoute: typeof ApiTorrentsIdStreamRoute
+  ApiTorrentsIdIndexRoute: typeof ApiTorrentsIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +104,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/torrents/': {
+      id: '/api/torrents/'
+      path: '/api/torrents'
+      fullPath: '/api/torrents/'
+      preLoaderRoute: typeof ApiTorrentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/torrents/events': {
+      id: '/api/torrents/events'
+      path: '/api/torrents/events'
+      fullPath: '/api/torrents/events'
+      preLoaderRoute: typeof ApiTorrentsEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/torrents/$id/': {
+      id: '/api/torrents/$id/'
+      path: '/api/torrents/$id'
+      fullPath: '/api/torrents/$id/'
+      preLoaderRoute: typeof ApiTorrentsIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/torrents/$id/stream': {
+      id: '/api/torrents/$id/stream'
+      path: '/api/torrents/$id/stream'
+      fullPath: '/api/torrents/$id/stream'
+      preLoaderRoute: typeof ApiTorrentsIdStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiTorrentsEventsRoute: ApiTorrentsEventsRoute,
+  ApiTorrentsIndexRoute: ApiTorrentsIndexRoute,
+  ApiTorrentsIdStreamRoute: ApiTorrentsIdStreamRoute,
+  ApiTorrentsIdIndexRoute: ApiTorrentsIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

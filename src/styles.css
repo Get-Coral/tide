@@ -1,24 +1,181 @@
 @import "tailwindcss";
 
 @theme {
-  --color-abyss: #060d12;
-  --color-deep: #0b1820;
-  --color-coral: #ff6b6b;
-  --color-teal: #2dd4bf;
-  --color-ink: #f0ede8;
-  --color-ink-muted: rgba(240, 237, 232, 0.55);
-  --color-ink-faint: rgba(240, 237, 232, 0.25);
+  --color-abyss: #091017;
+  --color-deep: #101a25;
+  --color-coral: #f28862;
+  --color-teal: #65c8b8;
+  --color-ink: #e8eef5;
+  --color-ink-muted: rgba(232, 238, 245, 0.62);
+  --color-ink-faint: rgba(232, 238, 245, 0.28);
   --color-border: rgba(255, 255, 255, 0.08);
   --color-surface: rgba(255, 255, 255, 0.04);
 
-  --font-sans: "DM Sans", sans-serif;
-  --font-display: "Fraunces", serif;
+  --font-sans: "Manrope", sans-serif;
 }
 
 @layer base {
   body {
-    background-color: var(--color-abyss);
+    background-color: color-mix(in oklab, var(--color-abyss) 86%, black);
     color: var(--color-ink);
     font-family: var(--font-sans);
+  }
+}
+
+.tide-screen {
+  min-height: 100vh;
+  background-image: radial-gradient(circle at 85% -10%, rgba(101, 200, 184, 0.14), transparent 42%);
+}
+
+.tide-layout {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 74rem;
+  padding: 2.5rem 1rem 3rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.tide-metrics-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tide-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tide-label {
+  font-size: 0.85rem;
+  color: var(--color-ink-muted);
+}
+
+.tide-input {
+  width: 100%;
+  border-radius: 0.8rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-deep);
+  padding: 0.75rem;
+  font-size: 0.92rem;
+  color: var(--color-ink);
+  outline: none;
+}
+
+.tide-input:focus {
+  border-color: color-mix(in oklab, var(--color-teal) 60%, white);
+}
+
+.tide-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tide-error {
+  font-size: 0.85rem;
+  color: var(--color-coral);
+}
+
+.tide-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tide-item {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.tide-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tide-item-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.tide-item-id {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  color: var(--color-ink-faint);
+}
+
+.tide-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tide-watch-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  background: color-mix(in oklab, var(--color-teal) 26%, transparent);
+  color: var(--color-ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0.48rem 0.8rem;
+}
+
+.tide-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--color-ink-muted);
+}
+
+.tide-progress-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-deep) 82%, black);
+  overflow: hidden;
+}
+
+.tide-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--color-coral) 70%, white), var(--color-teal));
+  transition: width 240ms ease;
+}
+
+.tide-item-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  font-size: 0.8rem;
+  color: var(--color-ink-muted);
+}
+
+.tide-metric-label {
+  font-size: 0.76rem;
+  color: var(--color-ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tide-metric-value {
+  margin-top: 0.2rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .tide-layout {
+    padding: 2.75rem 1.5rem 3.5rem;
+  }
+
+  .tide-metrics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
