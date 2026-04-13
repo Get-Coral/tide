@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import type WebTorrent from "webtorrent";
-import type { AddTorrentInput, TorrentSnapshot } from "./types";
 import { downloadsPath, torrentClient } from "./client";
+import type { AddTorrentInput, TorrentSnapshot } from "./types";
 
 const updates = new EventEmitter();
 

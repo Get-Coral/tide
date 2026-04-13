@@ -1,6 +1,6 @@
 import { CoralButton, CoralCard, CoralSection } from "@get-coral/ui";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { createTorrent, deleteTorrent, listTorrents, type TorrentSnapshot } from "#/lib/torrents";
 
 export const Route = createFileRoute("/")({
