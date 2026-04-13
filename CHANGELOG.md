@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/Get-Coral/tide/compare/v1.0.0...v1.0.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* update title ([a904221](https://github.com/Get-Coral/tide/commit/a9042218553d59c1ea55adb79915c5fcee9de75d))
+
 ## 1.0.0 (2026-04-13)
 
 
