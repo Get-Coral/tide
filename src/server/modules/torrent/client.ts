@@ -19,10 +19,12 @@ declare global {
 
 const existing = globalThis.__coralTorrentClient;
 
+console.log(`[tide:client] ${existing ? "Reusing existing" : "Creating new"} WebTorrent instance`);
 export const torrentClient = existing ?? new WebTorrent();
 
 if (!existing) {
 	globalThis.__coralTorrentClient = torrentClient;
+	console.log("[tide:client] WebTorrent instance created");
 }
 
 export const downloadsPath = getDownloadsPath();

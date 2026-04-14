@@ -38,7 +38,9 @@ const trackerRuntime = new Map<
 	}
 >();
 
+console.log("[tide:manager] Initializing torrent manager");
 let persistedGlobal = toSafeGlobalSettings(loadPersistedGlobalSettings());
+console.log("[tide:manager] Global settings loaded");
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 
 interface InternalSelection {
@@ -754,7 +756,9 @@ function wireTorrent(torrent: WebTorrent.Torrent) {
 	enforceAllTorrents();
 }
 
+console.log("[tide:manager] Restoring persisted controls");
 restorePersistedControls();
+console.log("[tide:manager] Applying throttle settings");
 
 if (persistedGlobal.downloadLimitBps != null) {
 	torrentClient.throttleDownload(persistedGlobal.downloadLimitBps);
@@ -768,7 +772,9 @@ if (persistedGlobal.uploadLimitBps != null) {
 	torrentClient.throttleUpload(-1);
 }
 
+console.log("[tide:manager] Restoring persisted torrents");
 restorePersistedTorrents();
+console.log("[tide:manager] Torrent manager ready");
 
 torrentClient.on("torrent", (torrent: WebTorrent.Torrent) => {
 	wireTorrent(torrent);
