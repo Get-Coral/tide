@@ -1,0 +1,10 @@
+{
+  "name": "node-datachannel",
+  "version": "0.32.2",
+  "description": "Stub for node-datachannel — disables WebRTC, BitTorrent still works normally",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}
