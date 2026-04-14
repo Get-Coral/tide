@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.1.0](https://github.com/Get-Coral/tide/compare/v1.0.1...v1.1.0) (2026-04-14)
+
+
+### Features
+
+* add support for incomplete path ([b635735](https://github.com/Get-Coral/tide/commit/b6357351359d36349a024c4a7e1ab840d40a1e99))
+
+
+### Bug Fixes
+
+* add logging (temp) ([441ea2a](https://github.com/Get-Coral/tide/commit/441ea2a2f73e1ad332ad2b4ac983c11aec2c1fc9))
+* implement snapshot throttling in publishSnapshot function ([38c30fd](https://github.com/Get-Coral/tide/commit/38c30fd538678e2606484af3b2aa22059d71d18e))
+* stub node-datachannel native addon to bypass missing WebRTC binary ([a4c1a9d](https://github.com/Get-Coral/tide/commit/a4c1a9da9d4eae443c9c0da0a0736c87496d3483))
+* update dockerfile ([7d5d1ae](https://github.com/Get-Coral/tide/commit/7d5d1aeed754305162d58a37f900bf01b4d9dc84))
+* update Dockerfile ([387b638](https://github.com/Get-Coral/tide/commit/387b63822a5dbefb4a56c2d7d28af8b7c6eeaec8))
+
 ## [1.0.1](https://github.com/Get-Coral/tide/compare/v1.0.0...v1.0.1) (2026-04-13)
 
 
