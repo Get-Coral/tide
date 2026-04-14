@@ -68,19 +68,11 @@ function toDatabaseText(value: unknown) {
 
 function getDatabase() {
 	if (database) return database;
-	const dbPath = getDatabasePath();
-	console.log(`[tide:store] Opening database at ${dbPath}`);
-	try {
-		fs.mkdirSync(getDataDirectory(), { recursive: true });
-		database = new DatabaseSync(dbPath);
-		database.exec(CREATE_SETTINGS_TABLE_SQL);
-		database.exec(CREATE_TORRENTS_TABLE_SQL);
-		database.exec(CREATE_CONTROLS_TABLE_SQL);
-		console.log(`[tide:store] Database ready`);
-	} catch (err) {
-		console.error(`[tide:store] Failed to open database at ${dbPath}:`, err);
-		throw err;
-	}
+	fs.mkdirSync(getDataDirectory(), { recursive: true });
+	database = new DatabaseSync(getDatabasePath());
+	database.exec(CREATE_SETTINGS_TABLE_SQL);
+	database.exec(CREATE_TORRENTS_TABLE_SQL);
+	database.exec(CREATE_CONTROLS_TABLE_SQL);
 	return database;
 }
 

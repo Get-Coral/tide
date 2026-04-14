@@ -1,6 +1,8 @@
 import { EventEmitter } from "node:events";
+import fs from "node:fs";
+import path from "node:path";
 import type WebTorrent from "webtorrent";
-import { downloadsPath, torrentClient } from "./client";
+import { downloadsPath, incompletePath, torrentClient } from "./client";
 import {
 	deletePersistedTorrent,
 	deletePersistedTorrentControl,
@@ -38,9 +40,7 @@ const trackerRuntime = new Map<
 	}
 >();
 
-console.log("[tide:manager] Initializing torrent manager");
 let persistedGlobal = toSafeGlobalSettings(loadPersistedGlobalSettings());
-console.log("[tide:manager] Global settings loaded");
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 
 interface InternalSelection {
@@ -193,7 +193,11 @@ function persistState() {
 		if (!persistedInfoHash) {
 			continue;
 		}
-		savePersistedTorrentControl(persistedInfoHash, { ...control, pausedByQueue: false });
+		savePersistedTorrentControl(persistedInfoHash, {
+			...control,
+			pausedByQueue: false,
+			lastError: null,
+		});
 	}
 	for (const torrent of torrentClient.torrents) {
 		savePersistedTorrent(torrent.infoHash, torrent.magnetURI, torrent.path ?? null);
@@ -231,7 +235,7 @@ function restorePersistedTorrents() {
 		if (existing) {
 			continue;
 		}
-		torrentClient.add(item.magnet_uri, { path: item.download_path || downloadsPath });
+		torrentClient.add(item.magnet_uri, { path: item.download_path || incompletePath });
 	}
 }
 
@@ -706,6 +710,23 @@ function markTrackerStatus(
 	});
 }
 
+function moveToComplete(torrent: WebTorrent.Torrent) {
+	if (torrent.path === downloadsPath || !torrent.files.length) {
+		return;
+	}
+	const firstFile = torrent.files[0] as InternalFile;
+	const topLevel = path.relative(torrent.path, firstFile.path).split(path.sep)[0];
+	const src = path.join(torrent.path, topLevel);
+	const dst = path.join(downloadsPath, topLevel);
+	try {
+		fs.mkdirSync(downloadsPath, { recursive: true });
+		fs.renameSync(src, dst);
+		savePersistedTorrent(torrent.infoHash, torrent.magnetURI, downloadsPath);
+	} catch {
+		// Move failed (e.g. cross-device) — files remain in incomplete folder
+	}
+}
+
 function wireTorrent(torrent: WebTorrent.Torrent) {
 	const wired = torrent as WebTorrent.Torrent & { __coralWired?: boolean };
 	const eventfulTorrent = torrent as WebTorrent.Torrent & {
@@ -720,8 +741,17 @@ function wireTorrent(torrent: WebTorrent.Torrent) {
 		enforceAllTorrents();
 		publishSnapshot();
 	});
-	torrent.on("done", publishSnapshot);
-	torrent.on("download", publishSnapshot);
+	torrent.on("done", () => {
+		moveToComplete(torrent);
+		publishSnapshot();
+	});
+	torrent.on("download", () => {
+		const control = getOrCreateControl(torrent);
+		if (control.lastError) {
+			control.lastError = null;
+		}
+		publishSnapshot();
+	});
 	torrent.on("upload", publishSnapshot);
 	torrent.on("wire", publishSnapshot);
 	eventfulTorrent.on("trackerAnnounce", () => {
@@ -756,9 +786,7 @@ function wireTorrent(torrent: WebTorrent.Torrent) {
 	enforceAllTorrents();
 }
 
-console.log("[tide:manager] Restoring persisted controls");
 restorePersistedControls();
-console.log("[tide:manager] Applying throttle settings");
 
 if (persistedGlobal.downloadLimitBps != null) {
 	torrentClient.throttleDownload(persistedGlobal.downloadLimitBps);
@@ -772,9 +800,7 @@ if (persistedGlobal.uploadLimitBps != null) {
 	torrentClient.throttleUpload(-1);
 }
 
-console.log("[tide:manager] Restoring persisted torrents");
 restorePersistedTorrents();
-console.log("[tide:manager] Torrent manager ready");
 
 torrentClient.on("torrent", (torrent: WebTorrent.Torrent) => {
 	wireTorrent(torrent);
@@ -989,7 +1015,7 @@ export async function addTorrent(input: AddTorrentInput) {
 	}
 
 	const torrent = await new Promise<WebTorrent.Torrent>((resolve, reject) => {
-		const created = torrentClient.add(magnet, { path: input.path || downloadsPath });
+		const created = torrentClient.add(magnet, { path: input.path || incompletePath });
 		created.once("ready", () => resolve(created));
 		created.once("error", reject);
 	});
