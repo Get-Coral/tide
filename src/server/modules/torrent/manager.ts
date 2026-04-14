@@ -689,8 +689,14 @@ export function listTorrents() {
 	return torrentClient.torrents.map(toTorrentSnapshot);
 }
 
+let snapshotTimer: ReturnType<typeof setTimeout> | null = null;
+
 function publishSnapshot() {
-	updates.emit("update", listTorrents());
+	if (snapshotTimer) return;
+	snapshotTimer = setTimeout(() => {
+		snapshotTimer = null;
+		updates.emit("update", listTorrents());
+	}, 500);
 }
 
 function markTrackerStatus(
