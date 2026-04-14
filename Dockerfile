@@ -17,7 +17,8 @@ FROM base AS prod-deps
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ cmake \
-  && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/* \
+  && npm install -g cmake-js
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile
 
