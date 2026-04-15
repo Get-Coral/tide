@@ -721,15 +721,34 @@ function moveToComplete(torrent: WebTorrent.Torrent) {
 		return;
 	}
 	const firstFile = torrent.files[0] as InternalFile;
-	const topLevel = path.relative(torrent.path, firstFile.path).split(path.sep)[0];
+	// file.path is relative to torrent.path (e.g. "MovieName/ep1.mkv"), not absolute.
+	// Take the first path segment to get the top-level dir/file to move.
+	const topLevel = firstFile.path.split(path.sep)[0];
 	const src = path.join(torrent.path, topLevel);
 	const dst = path.join(downloadsPath, topLevel);
+
+	fs.mkdirSync(downloadsPath, { recursive: true });
+
+	let moved = false;
 	try {
-		fs.mkdirSync(downloadsPath, { recursive: true });
 		fs.renameSync(src, dst);
+		moved = true;
+	} catch (err) {
+		// Cross-device rename (e.g. Docker volumes on different filesystems) — fall back to copy + delete
+		if ((err as NodeJS.ErrnoException).code === "EXDEV") {
+			try {
+				fs.cpSync(src, dst, { recursive: true });
+				fs.rmSync(src, { recursive: true, force: true });
+				moved = true;
+			} catch {
+				// Copy+delete also failed — files remain in incomplete folder
+			}
+		}
+	}
+
+	if (moved) {
+		(torrent as WebTorrent.Torrent & { path: string }).path = downloadsPath;
 		savePersistedTorrent(torrent.infoHash, torrent.magnetURI, downloadsPath);
-	} catch {
-		// Move failed (e.g. cross-device) — files remain in incomplete folder
 	}
 }
 
@@ -1007,7 +1026,7 @@ function applyTorrentFileUpdates(control: TorrentControlState, input: TorrentCon
 	}
 }
 
-export async function addTorrent(input: AddTorrentInput) {
+export function addTorrent(input: AddTorrentInput) {
 	const magnet = input.magnet.trim();
 	if (!magnet) {
 		throw new Error("Magnet link is required.");
@@ -1020,12 +1039,10 @@ export async function addTorrent(input: AddTorrentInput) {
 		}
 	}
 
-	const torrent = await new Promise<WebTorrent.Torrent>((resolve, reject) => {
-		const created = torrentClient.add(magnet, { path: input.path || incompletePath });
-		created.once("ready", () => resolve(created));
-		created.once("error", reject);
-	});
-
+	// torrentClient.add() is synchronous — the torrent (with infoHash from the magnet URI)
+	// is available immediately. We don't wait for "ready" so the UI unblocks at once.
+	// Metadata, name, and files arrive later and are pushed via SSE.
+	const torrent = torrentClient.add(magnet, { path: input.path || incompletePath });
 	restoredMagnets.add(torrent.magnetURI);
 	wireTorrent(torrent);
 	savePersistedTorrent(torrent.infoHash, torrent.magnetURI, torrent.path ?? null);
