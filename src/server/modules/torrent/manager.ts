@@ -68,22 +68,26 @@ interface InternalWire {
 	remoteAddress?: string;
 	remotePort?: number;
 	type?: string;
+	destroyed?: boolean;
 	peerChoking?: boolean;
 	amInterested?: boolean;
 	downloadSpeed?: () => number;
 	uploadSpeed?: () => number;
 	requests?: unknown[];
+	destroy(): void;
 }
 
 interface InternalTorrent extends WebTorrent.Torrent {
 	_selections?: InternalSelections;
 	_updateSelections?: () => void;
+	_critical?: boolean[];
 	_rarityMap?: { _pieces?: number[] };
 	bitfield?: { get(index: number): boolean };
 	discovery?: { tracker?: { start?: () => void; update?: () => void } };
 	wires: InternalWire[];
 	files: InternalFile[];
 	critical(start: number, end: number): void;
+	deselect(start: number, end: number): void;
 }
 
 function isHexHash(value: string) {
@@ -290,14 +294,23 @@ function applyPieceSelections(torrent: WebTorrent.Torrent, control: TorrentContr
 	if (!internalTorrent.files.length || !internalTorrent._selections) {
 		return;
 	}
+	const shouldSuspendSelections = control.paused || control.pausedByQueue || control.stoppedByRule;
 
-	const preservedStreams = internalTorrent._selections._items
-		.filter((item) => item.isStreamSelection)
-		.map((item) => ({ ...item }));
+	const preservedStreams = shouldSuspendSelections
+		? []
+		: internalTorrent._selections._items
+				.filter((item) => item.isStreamSelection)
+				.map((item) => ({ ...item }));
 
 	internalTorrent._selections.clear();
+	internalTorrent._critical = [];
 	for (const streamSelection of preservedStreams) {
 		internalTorrent._selections.insert(streamSelection);
+	}
+
+	if (shouldSuspendSelections) {
+		internalTorrent._updateSelections?.();
+		return;
 	}
 
 	for (const range of getSelectedRanges(internalTorrent, control)) {
@@ -308,6 +321,16 @@ function applyPieceSelections(torrent: WebTorrent.Torrent, control: TorrentContr
 	}
 
 	internalTorrent._updateSelections?.();
+}
+
+function disconnectActiveWires(torrent: WebTorrent.Torrent) {
+	const internalTorrent = torrent as InternalTorrent;
+	for (const wire of internalTorrent.wires) {
+		if (wire.destroyed) {
+			continue;
+		}
+		wire.destroy();
+	}
 }
 
 function applyRuleStops(torrent: WebTorrent.Torrent, control: TorrentControlState) {
@@ -374,11 +397,18 @@ function applySoftPerTorrentLimit(torrent: WebTorrent.Torrent, control: TorrentC
 
 function applyPauseState(torrent: WebTorrent.Torrent, control: TorrentControlState) {
 	const shouldPause = control.paused || control.pausedByQueue || control.stoppedByRule;
-	if (shouldPause && !torrent.paused) {
-		torrent.pause();
+	if (shouldPause) {
+		if (!torrent.paused) {
+			torrent.pause();
+		}
+		disconnectActiveWires(torrent);
+		return;
 	}
 	if (!shouldPause && torrent.paused && !limiterPaused.has(torrent.infoHash)) {
 		torrent.resume();
+		const tracker = (torrent as InternalTorrent).discovery?.tracker;
+		tracker?.update?.();
+		tracker?.start?.();
 	}
 }
 
@@ -659,6 +689,9 @@ function getTorrentSnapshotState(
 ): TorrentSnapshot["state"] {
 	if (control.lastError) {
 		return "errored";
+	}
+	if (control.paused || control.stoppedByRule) {
+		return "paused";
 	}
 	if (control.pausedByQueue) {
 		return "queued";

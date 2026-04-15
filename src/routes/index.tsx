@@ -354,7 +354,7 @@ function Home() {
 								/>
 							</div>
 
-							<div className="tide-drawer-summary">
+							<div className="tide-drawer-summary my-4">
 								<div>
 									<p className="tide-label">Overview</p>
 									<p className="text-ink-muted">
@@ -395,7 +395,7 @@ function Home() {
 								</div>
 							</section>
 
-							<section className="tide-global-footer">
+							<section className="tide-global-footer mt-2 border-none!">
 								<div className="tide-stack-row">
 									<p className="tide-label">Tracker health</p>
 									<div className="tide-peer-metrics">
@@ -409,7 +409,7 @@ function Home() {
 						</CoralCard>
 					) : null}
 
-					<div className={`tide-board ${sortedItems.length === 0 ? "tide-board--empty" : ""}`}>
+					<div className={`mt-2 tide-board ${sortedItems.length === 0 ? "tide-board--empty" : ""}`}>
 						<div className="tide-list tide-list--board">
 							{sortedItems.map((item) => {
 								const isSelected = selectedId === item.id;
