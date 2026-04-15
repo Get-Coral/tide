@@ -98,6 +98,72 @@ function normalizeId(value: string) {
 	return value.trim().toLowerCase();
 }
 
+function decodeBase32ToHex(value: string) {
+	const alphabet = "abcdefghijklmnopqrstuvwxyz234567";
+	let buffer = 0;
+	let bits = 0;
+	let output = "";
+
+	for (const character of value.toLowerCase()) {
+		const index = alphabet.indexOf(character);
+		if (index < 0) {
+			return null;
+		}
+		buffer = (buffer << 5) | index;
+		bits += 5;
+		while (bits >= 8) {
+			bits -= 8;
+			output += ((buffer >> bits) & 0xff).toString(16).padStart(2, "0");
+		}
+	}
+
+	return output;
+}
+
+function getInfoHashFromMagnet(value: string) {
+	if (!value.toLowerCase().startsWith("magnet:?")) {
+		return null;
+	}
+
+	let url: URL;
+	try {
+		url = new URL(value);
+	} catch {
+		return null;
+	}
+
+	const exactTopic = url.searchParams.getAll("xt").find((item) =>
+		item.toLowerCase().startsWith("urn:btih:"),
+	);
+	if (!exactTopic) {
+		return null;
+	}
+
+	const identifier = exactTopic.slice("urn:btih:".length).trim();
+	if (isHexHash(identifier)) {
+		return normalizeId(identifier);
+	}
+
+	if (identifier.length === 32) {
+		return decodeBase32ToHex(identifier);
+	}
+
+	return null;
+}
+
+function findExistingTorrentForInput(value: string) {
+	if (isHexHash(value)) {
+		return getTorrentById(value);
+	}
+
+	const infoHash = getInfoHashFromMagnet(value);
+	if (infoHash) {
+		return getTorrentById(infoHash);
+	}
+
+	return torrentClient.torrents.find((torrent) => torrent.magnetURI.trim() === value);
+}
+
 function toPersistedInfoHash(value: unknown) {
 	return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -1073,11 +1139,9 @@ export function addTorrent(input: AddTorrentInput) {
 		throw new Error("Magnet link is required.");
 	}
 
-	if (isHexHash(magnet)) {
-		const existing = getTorrentById(magnet);
-		if (existing) {
-			return toTorrentSnapshot(existing);
-		}
+	const existing = findExistingTorrentForInput(magnet);
+	if (existing) {
+		throw new Error(`Torrent already exists: ${existing.name || existing.infoHash}`);
 	}
 
 	// torrentClient.add() is synchronous — the torrent (with infoHash from the magnet URI)
