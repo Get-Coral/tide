@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.1](https://github.com/Get-Coral/tide/compare/v1.1.0...v1.1.1) (2026-04-15)
+
+
+### Bug Fixes
+
+* allow pause button to work ([dec3058](https://github.com/Get-Coral/tide/commit/dec30589bc241a142f3bf6e09d1b8ddbc1759a10))
+* clean up UI ([5e651e3](https://github.com/Get-Coral/tide/commit/5e651e336bcbf793c7fb980af64fde70c3d58a0e))
+* improve file moving logic in moveToComplete function ([eacd83f](https://github.com/Get-Coral/tide/commit/eacd83f38cdf0186cff45266ce3f0ab476d82d10))
+* update piece map ([be7e3fa](https://github.com/Get-Coral/tide/commit/be7e3faeef188258f08f7c738ea7880cc2def907))
+
 ## [1.1.0](https://github.com/Get-Coral/tide/compare/v1.0.1...v1.1.0) (2026-04-14)
 
 
