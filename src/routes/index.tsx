@@ -1,6 +1,6 @@
 import { CoralButton, CoralCard, CoralSection } from "@get-coral/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
 	compareTorrents,
 	formatBytes,
@@ -375,7 +375,10 @@ function Home() {
 									<h3>Combined piece map</h3>
 									<span>{globalSwarm.bucketCount} buckets</span>
 								</div>
-								<div className="tide-piece-map tide-piece-map--global">
+								<div
+									className="tide-piece-map tide-piece-map--global"
+									style={getPieceMapStyle(globalSwarm.bucketCount, "global")}
+								>
 									{globalSwarm.pieceMap.map((bucket) => (
 										<div
 											key={`global-${bucket.index}`}
@@ -530,7 +533,10 @@ function DetailsDrawer({ item }: { item: TorrentSnapshot }) {
 				{item.details.pieceMap.length === 0 ? (
 					<p className="text-ink-muted">Waiting for metadata…</p>
 				) : (
-					<div className="tide-piece-map">
+					<div
+						className="tide-piece-map"
+						style={getPieceMapStyle(item.details.pieceMap.length, "detail")}
+					>
 						{item.details.pieceMap.map((bucket) => (
 							<div
 								key={`${bucket.startPiece}-${bucket.endPiece}`}
@@ -691,6 +697,30 @@ function countTrackersByStatus(
 	status: TorrentTrackerSnapshot["status"],
 ) {
 	return trackers.filter((tracker) => tracker.status === status).length;
+}
+
+function getPieceMapStyle(bucketCount: number, variant: "detail" | "global"): CSSProperties {
+	const cellSize = getPieceMapCellSize(bucketCount, variant);
+	const gap = cellSize <= 0.42 ? 0.16 : cellSize <= 0.56 ? 0.2 : 0.26;
+
+	return {
+		"--piece-cell-size": `${cellSize}rem`,
+		"--piece-map-gap": `${gap}rem`,
+	} as CSSProperties;
+}
+
+function getPieceMapCellSize(bucketCount: number, variant: "detail" | "global") {
+	if (variant === "global") {
+		if (bucketCount >= 180) return 0.3;
+		if (bucketCount >= 120) return 0.38;
+		if (bucketCount >= 80) return 0.48;
+		return 0.62;
+	}
+
+	if (bucketCount >= 180) return 0.38;
+	if (bucketCount >= 120) return 0.48;
+	if (bucketCount >= 80) return 0.58;
+	return 0.76;
 }
 
 function formatCompactNumber(value: number) {

@@ -528,7 +528,7 @@ function toPieceMap(
 		return [];
 	}
 
-	const buckets = Math.min(pieceCount, 56);
+	const buckets = getPieceMapBucketCount(pieceCount);
 	const rarity = torrent._rarityMap?._pieces ?? [];
 	const map: TorrentPieceBucketSnapshot[] = [];
 
@@ -564,6 +564,14 @@ function toPieceMap(
 	}
 
 	return map;
+}
+
+function getPieceMapBucketCount(pieceCount: number) {
+	if (pieceCount <= 64) {
+		return pieceCount;
+	}
+
+	return Math.min(pieceCount, Math.min(224, Math.max(56, Math.ceil(Math.sqrt(pieceCount) * 6))));
 }
 
 function toPeerSnapshots(torrent: InternalTorrent): TorrentPeerSnapshot[] {

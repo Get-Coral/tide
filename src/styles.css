@@ -441,18 +441,20 @@
 }
 
 .tide-piece-map {
+  --piece-cell-size: 0.76rem;
+  --piece-map-gap: 0.26rem;
   display: grid;
-  grid-template-columns: repeat(14, minmax(0, 1fr));
-  gap: 0.3rem;
+  grid-template-columns: repeat(auto-fit, minmax(var(--piece-cell-size), 1fr));
+  gap: var(--piece-map-gap);
 }
 
 .tide-piece-map--global {
-  grid-template-columns: repeat(18, minmax(0, 1fr));
+  --piece-cell-size: 0.62rem;
 }
 
 .tide-piece-cell {
   aspect-ratio: 1 / 1;
-  border-radius: 0.3rem;
+  border-radius: min(0.3rem, calc(var(--piece-cell-size) * 0.45));
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
