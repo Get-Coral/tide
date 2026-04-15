@@ -1,6 +1,6 @@
 import { CoralButton, CoralCard, CoralSection } from "@get-coral/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
 	compareTorrents,
 	formatBytes,
@@ -10,6 +10,7 @@ import {
 } from "#/lib/torrent-ui";
 import {
 	createTorrent,
+	deleteTorrent,
 	type GlobalTorrentSettings,
 	listTorrents,
 	type TorrentPieceBucketSnapshot,
@@ -34,6 +35,9 @@ function Home() {
 	});
 	const [loading, setLoading] = useState(true);
 	const [busyId, setBusyId] = useState<string | null>(null);
+	const [removingId, setRemovingId] = useState<string | null>(null);
+	const [confirmingRemoveId, setConfirmingRemoveId] = useState<string | null>(null);
+	const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [magnet, setMagnet] = useState("");
 	const [adding, setAdding] = useState(false);
@@ -41,7 +45,6 @@ function Home() {
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [sortMode, setSortMode] = useState<TorrentSortMode>("activity");
 	const [filterMode, setFilterMode] = useState<FilterMode>("all");
-	const [detailsOpen, setDetailsOpen] = useState(false);
 
 	useEffect(() => {
 		let active = true;
@@ -127,6 +130,28 @@ function Home() {
 		return next;
 	}, [filteredItems, sortMode]);
 
+	async function handleRemove(id: string) {
+		if (confirmingRemoveId !== id) {
+			if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+			setConfirmingRemoveId(id);
+			confirmTimerRef.current = setTimeout(() => setConfirmingRemoveId(null), 3000);
+			return;
+		}
+		if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+		setConfirmingRemoveId(null);
+		setRemovingId(id);
+		try {
+			await deleteTorrent(id);
+			setItems((current) => current.filter((item) => item.id !== id));
+			setSelectedId((current) => (current === id ? null : current));
+			setError(null);
+		} catch (requestError) {
+			setError(requestError instanceof Error ? requestError.message : "Unable to remove torrent.");
+		} finally {
+			setRemovingId(null);
+		}
+	}
+
 	async function handleAdd(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		if (!magnet.trim()) {
@@ -139,7 +164,6 @@ function Home() {
 			const created = await createTorrent(magnet.trim());
 			setItems((current) => [created, ...current.filter((item) => item.id !== created.id)]);
 			setMagnet("");
-			setDetailsOpen(false);
 			setError(null);
 		} catch (requestError) {
 			setError(requestError instanceof Error ? requestError.message : "Unable to add torrent.");
@@ -389,20 +413,14 @@ function Home() {
 						<div className="tide-list tide-list--board">
 							{sortedItems.map((item) => {
 								const isSelected = selectedId === item.id;
+								const isRemoving = removingId === item.id;
+								const isConfirming = confirmingRemoveId === item.id;
 								return (
 									<CoralCard key={item.id} className="tide-card-shell">
 										<button
 											type="button"
 											className={`tide-row-card ${isSelected ? "is-active" : ""}`}
-											onClick={() => {
-												if (isSelected) {
-													setSelectedId(null);
-													setDetailsOpen(false);
-													return;
-												}
-												setSelectedId(item.id);
-												setDetailsOpen(false);
-											}}
+											onClick={() => setSelectedId(isSelected ? null : item.id)}
 										>
 											<div className="tide-row-card__head">
 												<div>
@@ -434,15 +452,30 @@ function Home() {
 											</div>
 										</button>
 
-										{isSelected ? (
-											<DetailsDrawer
-												detailsOpen={detailsOpen}
-												item={item}
-												busy={busyId === item.id}
-												onPatch={patchTorrent}
-												onToggleDetails={() => setDetailsOpen((current) => !current)}
-											/>
-										) : null}
+										<div className="tide-card-action-strip">
+											<CoralButton
+												size="sm"
+												variant="neutral"
+												disabled={busyId === item.id}
+												onClick={() =>
+													void patchTorrent(item.id, {
+														action: item.control.paused ? "resume" : "pause",
+													})
+												}
+											>
+												{item.control.paused ? "Resume" : "Pause"}
+											</CoralButton>
+											<CoralButton
+												size="sm"
+												variant="danger"
+												disabled={isRemoving}
+												onClick={() => void handleRemove(item.id)}
+											>
+												{isRemoving ? "Removing…" : isConfirming ? "Sure?" : "Remove"}
+											</CoralButton>
+										</div>
+
+										{isSelected ? <DetailsDrawer item={item} /> : null}
 									</CoralCard>
 								);
 							})}
@@ -454,19 +487,7 @@ function Home() {
 	);
 }
 
-function DetailsDrawer({
-	busy,
-	detailsOpen,
-	item,
-	onPatch,
-	onToggleDetails,
-}: {
-	busy: boolean;
-	detailsOpen: boolean;
-	item: TorrentSnapshot;
-	onPatch: (id: string, patch: Parameters<typeof updateTorrentControl>[1]) => Promise<void>;
-	onToggleDetails: () => void;
-}) {
+function DetailsDrawer({ item }: { item: TorrentSnapshot }) {
 	return (
 		<aside className="tide-drawer">
 			<div className="tide-drawer__head">
@@ -483,15 +504,6 @@ function DetailsDrawer({
 					>
 						Watch
 					</a>
-					<CoralButton
-						variant="neutral"
-						onClick={() =>
-							void onPatch(item.id, { action: item.control.paused ? "resume" : "pause" })
-						}
-						disabled={busy}
-					>
-						{item.control.paused ? "Resume" : "Pause"}
-					</CoralButton>
 					<Link to="/manage" className="tide-watch-link">
 						Manage
 					</Link>
@@ -499,116 +511,100 @@ function DetailsDrawer({
 			</div>
 
 			<div className="tide-item-stats">
-				<span>{item.state}</span>
 				<span>{formatBytes(item.length)}</span>
 				<span>{item.numPeers} peers</span>
 				<span>availability {item.availability.toFixed(2)}</span>
-				{item.control.lastError ? <span>error: {item.control.lastError}</span> : null}
+				<span>ratio {item.ratio.toFixed(2)}</span>
+				{item.control.lastError ? (
+					<span style={{ color: "var(--color-coral)" }}>error: {item.control.lastError}</span>
+				) : null}
 			</div>
 
-			<div className="tide-mini-grid tide-mini-grid--details">
-				<MiniStat label="Selected pieces" value={`${item.details.selectedPieces}`} />
-				<MiniStat label="Completed pieces" value={`${item.details.completedPieces}`} />
-				<MiniStat label="Trackers" value={`${item.details.trackers.length}`} />
-				<MiniStat label="Peers shown" value={`${item.details.peers.length}`} />
-			</div>
-			<div className="tide-drawer-summary">
-				<div>
-					<p className="tide-label">More detail</p>
-					<p className="text-ink-muted">
-						Open the deep view for the piece map, tracker state, and live peer list.
-					</p>
+			<section className="tide-drawer-section">
+				<div className="tide-drawer-section__head">
+					<h3>Piece map</h3>
+					<span>
+						{item.details.pieceCount} pieces · {formatBytes(item.details.pieceLength)}
+					</span>
 				</div>
-				<CoralButton variant="neutral" onClick={onToggleDetails}>
-					{detailsOpen ? "Hide details" : "Show details"}
-				</CoralButton>
-			</div>
+				{item.details.pieceMap.length === 0 ? (
+					<p className="text-ink-muted">Waiting for metadata…</p>
+				) : (
+					<div className="tide-piece-map">
+						{item.details.pieceMap.map((bucket) => (
+							<div
+								key={`${bucket.startPiece}-${bucket.endPiece}`}
+								className={`tide-piece-cell ${bucket.selected ? "is-selected" : "is-deselected"}`}
+								style={{
+									opacity: Math.max(0.2, bucket.completionRate),
+									backgroundColor:
+										bucket.completionRate >= 1
+											? "rgba(101, 200, 184, 0.95)"
+											: `rgba(242, 136, 98, ${0.2 + bucket.availabilityRate * 0.18})`,
+								}}
+								title={`Pieces ${bucket.startPiece}–${bucket.endPiece} · ${Math.round(
+									bucket.completionRate * 100,
+								)}% complete`}
+							/>
+						))}
+					</div>
+				)}
+			</section>
 
-			{detailsOpen ? (
-				<>
-					<section className="tide-drawer-section">
-						<div className="tide-drawer-section__head">
-							<h3>Piece map</h3>
-							<span>
-								{item.details.pieceCount} pieces · {formatBytes(item.details.pieceLength)}
-							</span>
-						</div>
-						<div className="tide-piece-map">
-							{item.details.pieceMap.map((bucket) => (
-								<div
-									key={`${bucket.startPiece}-${bucket.endPiece}`}
-									className={`tide-piece-cell ${bucket.selected ? "is-selected" : "is-deselected"}`}
-									style={{
-										opacity: Math.max(0.2, bucket.completionRate),
-										backgroundColor:
-											bucket.completionRate >= 1
-												? "rgba(101, 200, 184, 0.95)"
-												: `rgba(242, 136, 98, ${0.2 + bucket.availabilityRate * 0.18})`,
-									}}
-									title={`Pieces ${bucket.startPiece}-${bucket.endPiece} · ${Math.round(
-										bucket.completionRate * 100,
-									)}% complete`}
-								/>
-							))}
-						</div>
-					</section>
+			<section className="tide-drawer-section">
+				<div className="tide-drawer-section__head">
+					<h3>Trackers</h3>
+					<span>{item.details.trackers.length} configured</span>
+				</div>
+				<div className="tide-stack-list">
+					{item.details.trackers.length === 0 ? (
+						<p className="text-ink-muted">No trackers yet.</p>
+					) : (
+						item.details.trackers.map((tracker) => (
+							<div key={tracker.url} className="tide-stack-row">
+								<div>
+									<p>{tracker.url}</p>
+									<p className="tide-item-id">
+										{tracker.lastAnnounceAt
+											? `last announce ${new Date(tracker.lastAnnounceAt).toLocaleTimeString()}`
+											: "No announce yet"}
+									</p>
+								</div>
+								<span className={`tide-status-pill tide-status-pill--${tracker.status}`}>
+									{tracker.status}
+								</span>
+							</div>
+						))
+					)}
+				</div>
+			</section>
 
-					<section className="tide-drawer-section">
-						<div className="tide-drawer-section__head">
-							<h3>Trackers</h3>
-							<span>{item.details.trackers.length} configured</span>
-						</div>
-						<div className="tide-stack-list">
-							{item.details.trackers.length === 0 ? (
-								<p className="text-ink-muted">No trackers configured for this torrent yet.</p>
-							) : (
-								item.details.trackers.map((tracker) => (
-									<div key={tracker.url} className="tide-stack-row">
-										<div>
-											<p>{tracker.url}</p>
-											<p className="tide-item-id">
-												{tracker.lastAnnounceAt
-													? `last announce ${new Date(tracker.lastAnnounceAt).toLocaleTimeString()}`
-													: "No announce yet"}
-											</p>
-										</div>
-										<span className={`tide-status-pill tide-status-pill--${tracker.status}`}>
-											{tracker.status}
-										</span>
-									</div>
-								))
-							)}
-						</div>
-					</section>
-
-					<section className="tide-drawer-section">
-						<div className="tide-drawer-section__head">
-							<h3>Peers</h3>
-							<span>{item.details.peers.length} shown</span>
-						</div>
-						<div className="tide-stack-list">
-							{item.details.peers.length === 0 ? (
-								<p className="text-ink-muted">No peer wires connected right now.</p>
-							) : (
-								item.details.peers.map((peer) => (
-									<div key={peer.id} className="tide-stack-row">
-										<div>
-											<p>{peer.address}</p>
-											<p className="tide-item-id">
-												{peer.type} · {peer.requestedPieces} active requests
-											</p>
-										</div>
-										<div className="tide-peer-metrics">
-											<span>{peer.downloadSpeed ? formatSpeed(peer.downloadSpeed) : "--"} in</span>
-											<span>{peer.uploadSpeed ? formatSpeed(peer.uploadSpeed) : "--"} out</span>
-										</div>
-									</div>
-								))
-							)}
-						</div>
-					</section>
-				</>
-			) : null}
+			<section className="tide-drawer-section">
+				<div className="tide-drawer-section__head">
+					<h3>Peers</h3>
+					<span>{item.details.peers.length} shown</span>
+				</div>
+				<div className="tide-stack-list">
+					{item.details.peers.length === 0 ? (
+						<p className="text-ink-muted">No peers connected.</p>
+					) : (
+						item.details.peers.map((peer) => (
+							<div key={peer.id} className="tide-stack-row">
+								<div>
+									<p>{peer.address}</p>
+									<p className="tide-item-id">
+										{peer.type} · {peer.requestedPieces} active requests
+									</p>
+								</div>
+								<div className="tide-peer-metrics">
+									<span>{peer.downloadSpeed ? formatSpeed(peer.downloadSpeed) : "--"} in</span>
+									<span>{peer.uploadSpeed ? formatSpeed(peer.uploadSpeed) : "--"} out</span>
+								</div>
+							</div>
+						))
+					)}
+				</div>
+			</section>
 		</aside>
 	);
 }
