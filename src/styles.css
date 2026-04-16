@@ -90,6 +90,10 @@
   flex-basis: 22rem;
 }
 
+.tide-hero-card--caps {
+  flex-basis: 22rem;
+}
+
 .tide-summary-card,
 .tide-drawer-empty,
 .tide-drawer,

@@ -224,7 +224,7 @@ function Home() {
 							<MetricCard label="Completed" value={String(totals.doneCount)} />
 							<MetricCard label="Total speed" value={formatSpeed(totals.combinedSpeed)} />
 						</div>
-						<CoralCard className="tide-hero-card">
+						<CoralCard className="tide-hero-card tide-hero-card--caps">
 							<div className="tide-summary-card tide-summary-card--stacked">
 								<p className="tide-metric-label">Queue caps</p>
 								<p className="tide-summary-copy">
