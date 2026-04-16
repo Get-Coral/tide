@@ -16,6 +16,8 @@ export const Route = createFileRoute("/api/torrents/events")({
 				const body = new ReadableStream<Uint8Array>({
 					start(controller) {
 						let closed = false;
+						let unsubscribe = () => {};
+						let stopHeartbeat = () => {};
 
 						const close = () => {
 							if (closed) {
@@ -25,28 +27,42 @@ export const Route = createFileRoute("/api/torrents/events")({
 							stopHeartbeat();
 							unsubscribe();
 							request.signal.removeEventListener("abort", close);
-							controller.close();
+							try {
+								controller.close();
+							} catch {
+								// Stream is already closed or errored.
+							}
 						};
 
 						const send = (value: unknown) => {
-							if (!closed) {
+							if (closed) {
+								return;
+							}
+							try {
 								controller.enqueue(encoder.encode(sseData(value)));
+							} catch {
+								close();
 							}
 						};
 
 						send({ items: listTorrents() });
 
-						const unsubscribe = subscribeToTorrentUpdates((items) => {
+						unsubscribe = subscribeToTorrentUpdates((items) => {
 							send({ items });
 						});
 
 						const heartbeat = setInterval(() => {
-							if (!closed) {
+							if (closed) {
+								return;
+							}
+							try {
 								controller.enqueue(encoder.encode(": keepalive\\n\\n"));
+							} catch {
+								close();
 							}
 						}, 15000);
 
-						const stopHeartbeat = () => {
+						stopHeartbeat = () => {
 							clearInterval(heartbeat);
 						};
 

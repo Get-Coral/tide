@@ -1,4 +1,3 @@
-import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import path from "node:path";
 import type WebTorrent from "webtorrent";
@@ -27,7 +26,7 @@ import type {
 	TorrentTrackerSnapshot,
 } from "./types";
 
-const updates = new EventEmitter();
+const updateSubscribers = new Set<(items: TorrentSnapshot[]) => void>();
 const restoredMagnets = new Set<string>();
 const limiterPaused = new Set<string>();
 const controls = new Map<string, TorrentControlState>();
@@ -132,9 +131,9 @@ function getInfoHashFromMagnet(value: string) {
 		return null;
 	}
 
-	const exactTopic = url.searchParams.getAll("xt").find((item) =>
-		item.toLowerCase().startsWith("urn:btih:"),
-	);
+	const exactTopic = url.searchParams
+		.getAll("xt")
+		.find((item) => item.toLowerCase().startsWith("urn:btih:"));
 	if (!exactTopic) {
 		return null;
 	}
@@ -802,7 +801,10 @@ function publishSnapshot() {
 	if (snapshotTimer) return;
 	snapshotTimer = setTimeout(() => {
 		snapshotTimer = null;
-		updates.emit("update", listTorrents());
+		const snapshot = listTorrents();
+		for (const subscriber of updateSubscribers) {
+			subscriber(snapshot);
+		}
 	}, 500);
 }
 
@@ -952,9 +954,9 @@ setInterval(() => {
 }, 1000).unref();
 
 export function subscribeToTorrentUpdates(listener: (items: TorrentSnapshot[]) => void) {
-	updates.on("update", listener);
+	updateSubscribers.add(listener);
 	return () => {
-		updates.off("update", listener);
+		updateSubscribers.delete(listener);
 	};
 }
 
