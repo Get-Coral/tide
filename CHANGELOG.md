@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/Get-Coral/tide/compare/v1.1.1...v1.2.0) (2026-04-19)
+
+
+### Features
+
+* implement memory guard for torrent activity with configurable thresholds ([af9da9c](https://github.com/Get-Coral/tide/commit/af9da9c8cf44ba3fde036003ed170a9293d3f07c))
+
+
+### Bug Fixes
+
+* improve event stream handling and update subscription mechanism ([ddb2b62](https://github.com/Get-Coral/tide/commit/ddb2b62d79e61811d714e4690d2f894b9a408d77))
+* show server errors to user ([2ce41ec](https://github.com/Get-Coral/tide/commit/2ce41ec766a677341b46309fd8f38e6281f00c28))
+
 ## [1.1.1](https://github.com/Get-Coral/tide/compare/v1.1.0...v1.1.1) (2026-04-15)
 
 
