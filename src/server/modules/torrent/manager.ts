@@ -15,6 +15,7 @@ import {
 } from "./store";
 import type {
 	AddTorrentInput,
+	AppTorrentSettingsSummary,
 	GlobalTorrentSettings,
 	TorrentControlInput,
 	TorrentControlState,
@@ -26,6 +27,7 @@ import type {
 	TorrentTrackerSnapshot,
 } from "./types";
 
+const MEBIBYTE = 1024 * 1024;
 const updateSubscribers = new Set<(items: TorrentSnapshot[]) => void>();
 const restoredMagnets = new Set<string>();
 const limiterPaused = new Set<string>();
@@ -41,6 +43,30 @@ const trackerRuntime = new Map<
 
 let persistedGlobal = toSafeGlobalSettings(loadPersistedGlobalSettings());
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+interface MemoryGuardSettings {
+	enabled: boolean;
+	source: "env" | "cgroup" | "disabled";
+	limitBytes: number | null;
+	pauseThresholdBytes: number | null;
+	resumeThresholdBytes: number | null;
+	checkIntervalMs: number;
+}
+
+interface MemoryGuardRuntime {
+	active: boolean;
+	currentRssBytes: number | null;
+	lastTriggeredAt: string | null;
+	nextCheckAt: number;
+}
+
+const memoryGuardSettings = getMemoryGuardSettings();
+const memoryGuardRuntime: MemoryGuardRuntime = {
+	active: false,
+	currentRssBytes: null,
+	lastTriggeredAt: null,
+	nextCheckAt: 0,
+};
 
 interface InternalSelection {
 	from: number;
@@ -184,6 +210,103 @@ function sanitizePriority(value: number | undefined) {
 	return Math.max(0, Math.min(10, Math.floor(value)));
 }
 
+function parsePositiveIntegerEnv(name: string) {
+	const raw = process.env[name]?.trim();
+	if (!raw) {
+		return null;
+	}
+	const parsed = Number.parseInt(raw, 10);
+	if (!Number.isFinite(parsed) || parsed <= 0) {
+		return null;
+	}
+	return parsed;
+}
+
+function readCgroupMemoryLimitBytes() {
+	const candidates = ["/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"];
+
+	for (const candidate of candidates) {
+		try {
+			const raw = fs.readFileSync(candidate, "utf8").trim();
+			if (!raw || raw === "max") {
+				continue;
+			}
+			const parsed = Number.parseInt(raw, 10);
+			if (!Number.isFinite(parsed) || parsed <= 0 || parsed >= 2 ** 60) {
+				continue;
+			}
+			return parsed;
+		} catch {
+			// Ignore hosts without cgroup memory accounting.
+		}
+	}
+
+	return null;
+}
+
+function bytesToWholeMiB(value: number | null) {
+	if (value == null || !Number.isFinite(value) || value <= 0) {
+		return null;
+	}
+	return Math.max(1, Math.round(value / MEBIBYTE));
+}
+
+function formatMiB(value: number | null) {
+	const mib = bytesToWholeMiB(value);
+	return mib == null ? "unknown" : `${mib} MiB`;
+}
+
+function writeMemoryGuardLog(message: string, stream: "stdout" | "stderr" = "stderr") {
+	process[stream].write(`${message}\n`);
+}
+
+function getMemoryGuardSettings(): MemoryGuardSettings {
+	const explicitLimitMb = parsePositiveIntegerEnv("TIDE_MEMORY_LIMIT_MB");
+	const explicitPauseMb = parsePositiveIntegerEnv("TIDE_MEMORY_PAUSE_MB");
+	const explicitResumeMb = parsePositiveIntegerEnv("TIDE_MEMORY_RESUME_MB");
+	const cgroupLimitBytes = explicitLimitMb == null ? readCgroupMemoryLimitBytes() : null;
+	const limitBytes = explicitLimitMb != null ? explicitLimitMb * MEBIBYTE : cgroupLimitBytes;
+	const pauseThresholdBytes =
+		explicitPauseMb != null
+			? explicitPauseMb * MEBIBYTE
+			: limitBytes != null
+				? Math.max(MEBIBYTE, Math.floor(limitBytes * 0.9))
+				: null;
+
+	if (pauseThresholdBytes == null) {
+		return {
+			enabled: false,
+			source: "disabled",
+			limitBytes: null,
+			pauseThresholdBytes: null,
+			resumeThresholdBytes: null,
+			checkIntervalMs: parsePositiveIntegerEnv("TIDE_MEMORY_CHECK_INTERVAL_MS") ?? 5000,
+		};
+	}
+
+	let resumeThresholdBytes =
+		explicitResumeMb != null
+			? explicitResumeMb * MEBIBYTE
+			: limitBytes != null
+				? Math.max(MEBIBYTE, Math.floor(limitBytes * 0.75))
+				: Math.max(MEBIBYTE, Math.floor(pauseThresholdBytes * 0.85));
+	if (resumeThresholdBytes >= pauseThresholdBytes) {
+		resumeThresholdBytes = Math.max(MEBIBYTE, Math.floor(pauseThresholdBytes * 0.85));
+	}
+
+	return {
+		enabled: true,
+		source:
+			explicitLimitMb != null || explicitPauseMb != null || explicitResumeMb != null
+				? "env"
+				: "cgroup",
+		limitBytes,
+		pauseThresholdBytes,
+		resumeThresholdBytes,
+		checkIntervalMs: parsePositiveIntegerEnv("TIDE_MEMORY_CHECK_INTERVAL_MS") ?? 5000,
+	};
+}
+
 function toSafeGlobalSettings(value: Partial<GlobalTorrentSettings> | null | undefined) {
 	return {
 		downloadLimitBps: clampMaybeNumber(value?.downloadLimitBps),
@@ -197,6 +320,7 @@ function defaultControlState(queueOrder: number): TorrentControlState {
 	return {
 		paused: false,
 		pausedByQueue: false,
+		pausedByMemory: false,
 		queueOrder,
 		downloadLimitBps: null,
 		uploadLimitBps: null,
@@ -232,6 +356,7 @@ function toSafeControlState(
 		selectedFiles:
 			typeof value.selectedFiles === "object" && value.selectedFiles ? value.selectedFiles : {},
 		pausedByQueue: false,
+		pausedByMemory: false,
 	};
 }
 
@@ -265,6 +390,7 @@ function persistState() {
 		savePersistedTorrentControl(persistedInfoHash, {
 			...control,
 			pausedByQueue: false,
+			pausedByMemory: false,
 			lastError: null,
 		});
 	}
@@ -359,7 +485,8 @@ function applyPieceSelections(torrent: WebTorrent.Torrent, control: TorrentContr
 	if (!internalTorrent.files.length || !internalTorrent._selections) {
 		return;
 	}
-	const shouldSuspendSelections = control.paused || control.pausedByQueue || control.stoppedByRule;
+	const shouldSuspendSelections =
+		control.paused || control.pausedByQueue || control.pausedByMemory || control.stoppedByRule;
 
 	const preservedStreams = shouldSuspendSelections
 		? []
@@ -432,7 +559,7 @@ function applyRuleStops(torrent: WebTorrent.Torrent, control: TorrentControlStat
 }
 
 function applySoftPerTorrentLimit(torrent: WebTorrent.Torrent, control: TorrentControlState) {
-	if (control.paused || control.pausedByQueue || control.stoppedByRule) {
+	if (control.paused || control.pausedByQueue || control.pausedByMemory || control.stoppedByRule) {
 		limiterPaused.delete(torrent.infoHash);
 		return;
 	}
@@ -450,7 +577,13 @@ function applySoftPerTorrentLimit(torrent: WebTorrent.Torrent, control: TorrentC
 				return;
 			}
 			const latest = controls.get(torrent.infoHash);
-			if (!latest || latest.paused || latest.pausedByQueue || latest.stoppedByRule) {
+			if (
+				!latest ||
+				latest.paused ||
+				latest.pausedByQueue ||
+				latest.pausedByMemory ||
+				latest.stoppedByRule
+			) {
 				limiterPaused.delete(torrent.infoHash);
 				return;
 			}
@@ -461,7 +594,8 @@ function applySoftPerTorrentLimit(torrent: WebTorrent.Torrent, control: TorrentC
 }
 
 function applyPauseState(torrent: WebTorrent.Torrent, control: TorrentControlState) {
-	const shouldPause = control.paused || control.pausedByQueue || control.stoppedByRule;
+	const shouldPause =
+		control.paused || control.pausedByQueue || control.pausedByMemory || control.stoppedByRule;
 	if (shouldPause) {
 		if (!torrent.paused) {
 			torrent.pause();
@@ -477,6 +611,55 @@ function applyPauseState(torrent: WebTorrent.Torrent, control: TorrentControlSta
 	}
 }
 
+function syncMemoryGuardControls() {
+	let changed = false;
+	for (const torrent of torrentClient.torrents) {
+		const control = getOrCreateControl(torrent);
+		const nextPausedByMemory =
+			memoryGuardRuntime.active && !control.paused && !control.stoppedByRule;
+		if (control.pausedByMemory !== nextPausedByMemory) {
+			control.pausedByMemory = nextPausedByMemory;
+			changed = true;
+		}
+	}
+	return changed;
+}
+
+function refreshMemoryGuard(force = false) {
+	if (!memoryGuardSettings.enabled || memoryGuardSettings.pauseThresholdBytes == null) {
+		return syncMemoryGuardControls();
+	}
+
+	let changed = false;
+	const now = Date.now();
+	if (force || now >= memoryGuardRuntime.nextCheckAt) {
+		memoryGuardRuntime.nextCheckAt = now + memoryGuardSettings.checkIntervalMs;
+		const rss = process.memoryUsage().rss;
+		memoryGuardRuntime.currentRssBytes = rss;
+
+		if (!memoryGuardRuntime.active && rss >= memoryGuardSettings.pauseThresholdBytes) {
+			memoryGuardRuntime.active = true;
+			memoryGuardRuntime.lastTriggeredAt = new Date().toISOString();
+			writeMemoryGuardLog(
+				`[tide] Memory guard engaged at ${formatMiB(rss)} RSS (pause threshold ${formatMiB(memoryGuardSettings.pauseThresholdBytes)}). Pausing active torrents until RSS falls below ${formatMiB(memoryGuardSettings.resumeThresholdBytes)}.`,
+			);
+			changed = true;
+		} else if (
+			memoryGuardRuntime.active &&
+			memoryGuardSettings.resumeThresholdBytes != null &&
+			rss <= memoryGuardSettings.resumeThresholdBytes
+		) {
+			memoryGuardRuntime.active = false;
+			writeMemoryGuardLog(
+				`[tide] Memory guard released at ${formatMiB(rss)} RSS. Torrent activity may resume.`,
+			);
+			changed = true;
+		}
+	}
+
+	return syncMemoryGuardControls() || changed;
+}
+
 function applyQueueState() {
 	const ordered = [...torrentClient.torrents].sort((left, right) => {
 		return getOrCreateControl(left).queueOrder - getOrCreateControl(right).queueOrder;
@@ -489,7 +672,7 @@ function applyQueueState() {
 		const control = getOrCreateControl(torrent);
 		control.pausedByQueue = false;
 
-		if (control.paused || control.stoppedByRule) {
+		if (control.paused || control.pausedByMemory || control.stoppedByRule) {
 			continue;
 		}
 
@@ -526,6 +709,7 @@ function enforceControlState(torrent: WebTorrent.Torrent) {
 }
 
 function enforceAllTorrents() {
+	refreshMemoryGuard();
 	applyQueueState();
 	for (const torrent of torrentClient.torrents) {
 		enforceControlState(torrent);
@@ -766,7 +950,7 @@ function getTorrentSnapshotState(
 	if (control.paused || control.stoppedByRule) {
 		return "paused";
 	}
-	if (control.pausedByQueue) {
+	if (control.pausedByQueue || control.pausedByMemory) {
 		return "queued";
 	}
 	if (torrent.paused) {
@@ -922,6 +1106,13 @@ function wireTorrent(torrent: WebTorrent.Torrent) {
 
 restorePersistedControls();
 
+if (memoryGuardSettings.enabled) {
+	writeMemoryGuardLog(
+		`[tide] Memory guard enabled (${memoryGuardSettings.source}) with pause threshold ${formatMiB(memoryGuardSettings.pauseThresholdBytes)} and resume threshold ${formatMiB(memoryGuardSettings.resumeThresholdBytes)}.`,
+		"stdout",
+	);
+}
+
 if (persistedGlobal.downloadLimitBps != null) {
 	torrentClient.throttleDownload(persistedGlobal.downloadLimitBps);
 } else {
@@ -953,6 +1144,8 @@ setInterval(() => {
 	publishSnapshot();
 }, 1000).unref();
 
+refreshMemoryGuard(true);
+
 export function subscribeToTorrentUpdates(listener: (items: TorrentSnapshot[]) => void) {
 	updateSubscribers.add(listener);
 	return () => {
@@ -967,7 +1160,7 @@ export function getGlobalSettings() {
 export function getAppSettingsSummary() {
 	const authUsername = process.env.TIDE_AUTH_USERNAME?.trim() ?? "";
 	const authPassword = process.env.TIDE_AUTH_PASSWORD?.trim() ?? "";
-	return {
+	const summary: AppTorrentSettingsSummary = {
 		downloadsDirectory: downloadsPath,
 		downloadsEnvVar: process.env.TIDE_DOWNLOADS_DIR?.trim()
 			? "TIDE_DOWNLOADS_DIR"
@@ -977,7 +1170,17 @@ export function getAppSettingsSummary() {
 		databasePath: getDatabaseLocation(),
 		basicAuthEnabled: Boolean(authUsername && authPassword),
 		basicAuthUsername: authUsername || null,
+		memoryGuardEnabled: memoryGuardSettings.enabled,
+		memoryGuardSource: memoryGuardSettings.source,
+		memoryGuardLimitMb: bytesToWholeMiB(memoryGuardSettings.limitBytes),
+		memoryGuardPauseMb: bytesToWholeMiB(memoryGuardSettings.pauseThresholdBytes),
+		memoryGuardResumeMb: bytesToWholeMiB(memoryGuardSettings.resumeThresholdBytes),
+		memoryGuardCheckIntervalMs: memoryGuardSettings.checkIntervalMs,
+		memoryGuardActive: memoryGuardRuntime.active,
+		memoryGuardCurrentRssMb: bytesToWholeMiB(memoryGuardRuntime.currentRssBytes),
+		memoryGuardLastTriggeredAt: memoryGuardRuntime.lastTriggeredAt,
 	};
+	return summary;
 }
 
 export function updateGlobalSettings(input: Partial<GlobalTorrentSettings>) {

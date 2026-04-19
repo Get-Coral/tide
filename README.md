@@ -76,9 +76,30 @@ docker build -t tide .
 # Run
 docker run -p 3000:3000 \
   -e TIDE_DOWNLOADS_DIR=/downloads \
+  -e TIDE_MEMORY_LIMIT_MB=8192 \
+  -e TIDE_MEMORY_PAUSE_MB=7168 \
+  -e TIDE_MEMORY_RESUME_MB=6144 \
   -e TIDE_AUTH_USERNAME=admin \
   -e TIDE_AUTH_PASSWORD=change-me \
   tide
+```
+
+## Memory safety
+
+Tide now includes an RSS-based memory guard for torrent activity.
+
+- If Tide can read the container memory cap from cgroups, the guard enables itself automatically.
+- You can override or force thresholds with `TIDE_MEMORY_LIMIT_MB`, `TIDE_MEMORY_PAUSE_MB`, and `TIDE_MEMORY_RESUME_MB`.
+- When RSS crosses the pause threshold, Tide pauses active torrents and disconnects peers.
+- Activity resumes only after RSS falls below the lower resume threshold.
+- `TIDE_MEMORY_CHECK_INTERVAL_MS` controls how often Tide re-checks memory usage. Default is `5000`.
+
+For an 8 GB container limit on a NAS, a reasonable starting point is:
+
+```bash
+TIDE_MEMORY_LIMIT_MB=8192
+TIDE_MEMORY_PAUSE_MB=7168
+TIDE_MEMORY_RESUME_MB=6144
 ```
 
 Published automatically to `ghcr.io/get-coral/<module-name>` on every release via GitHub Actions.

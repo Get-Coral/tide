@@ -54,6 +54,7 @@ export interface TorrentDetailSnapshot {
 export interface TorrentControlState {
 	paused: boolean;
 	pausedByQueue: boolean;
+	pausedByMemory: boolean;
 	queueOrder: number;
 	downloadLimitBps: number | null;
 	uploadLimitBps: number | null;
@@ -82,6 +83,15 @@ export interface AppTorrentSettingsSummary {
 	databasePath: string;
 	basicAuthEnabled: boolean;
 	basicAuthUsername: string | null;
+	memoryGuardEnabled: boolean;
+	memoryGuardSource: "env" | "cgroup" | "disabled";
+	memoryGuardLimitMb: number | null;
+	memoryGuardPauseMb: number | null;
+	memoryGuardResumeMb: number | null;
+	memoryGuardCheckIntervalMs: number;
+	memoryGuardActive: boolean;
+	memoryGuardCurrentRssMb: number | null;
+	memoryGuardLastTriggeredAt: string | null;
 }
 
 export interface TorrentSnapshot {

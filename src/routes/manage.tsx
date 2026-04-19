@@ -314,6 +314,19 @@ function ManageRoute() {
 										}
 									/>
 									<SettingRow label="Auth .env" value="TIDE_AUTH_USERNAME and TIDE_AUTH_PASSWORD" />
+									<SettingRow
+										label="Memory guard"
+										value={
+											app.memoryGuardEnabled
+												? `Enabled (${app.memoryGuardSource})${app.memoryGuardActive ? " · active" : ""}`
+												: "Disabled"
+										}
+									/>
+									<SettingRow label="Memory thresholds" value={formatMemoryThresholdSummary(app)} />
+									<SettingRow
+										label="Memory guard .env"
+										value="TIDE_MEMORY_LIMIT_MB, TIDE_MEMORY_PAUSE_MB, TIDE_MEMORY_RESUME_MB, TIDE_MEMORY_CHECK_INTERVAL_MS"
+									/>
 								</div>
 							</CoralCard>
 						) : null}
@@ -589,6 +602,29 @@ function SettingRow({ label, value }: { label: string; value: string }) {
 			<span className="tide-setting-value">{value}</span>
 		</div>
 	);
+}
+
+function formatMemoryThresholdSummary(app: AppTorrentSettingsSummary) {
+	if (!app.memoryGuardEnabled) {
+		return "Disabled";
+	}
+
+	const parts = [
+		`pause ${formatMemoryMiB(app.memoryGuardPauseMb)}`,
+		`resume ${formatMemoryMiB(app.memoryGuardResumeMb)}`,
+	];
+	if (app.memoryGuardLimitMb != null) {
+		parts.push(`limit ${formatMemoryMiB(app.memoryGuardLimitMb)}`);
+	}
+	if (app.memoryGuardCurrentRssMb != null) {
+		parts.push(`rss ${formatMemoryMiB(app.memoryGuardCurrentRssMb)}`);
+	}
+	parts.push(`check ${Math.max(1, Math.round(app.memoryGuardCheckIntervalMs / 1000))}s`);
+	return parts.join(" · ");
+}
+
+function formatMemoryMiB(value: number | null) {
+	return value == null ? "unknown" : `${value} MiB`;
 }
 
 function toQueueInput(value: number | null | undefined) {
