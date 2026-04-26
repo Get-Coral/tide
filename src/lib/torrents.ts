@@ -75,6 +75,10 @@ export interface GlobalTorrentSettings {
 	uploadLimitBps: number | null;
 	maxActiveDownloads: number | null;
 	maxActiveSeeders: number | null;
+	defaultRatioGoal: number | null;
+	defaultSeedTimeGoalMinutes: number | null;
+	defaultStopOnRatio: boolean;
+	defaultStopOnSeedTime: boolean;
 }
 
 export interface AppTorrentSettingsSummary {

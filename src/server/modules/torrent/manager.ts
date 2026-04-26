@@ -307,12 +307,18 @@ function getMemoryGuardSettings(): MemoryGuardSettings {
 	};
 }
 
-function toSafeGlobalSettings(value: Partial<GlobalTorrentSettings> | null | undefined) {
+function toSafeGlobalSettings(
+	value: Partial<GlobalTorrentSettings> | null | undefined,
+): GlobalTorrentSettings {
 	return {
 		downloadLimitBps: clampMaybeNumber(value?.downloadLimitBps),
 		uploadLimitBps: clampMaybeNumber(value?.uploadLimitBps),
 		maxActiveDownloads: clampMaybeInteger(value?.maxActiveDownloads),
 		maxActiveSeeders: clampMaybeInteger(value?.maxActiveSeeders),
+		defaultRatioGoal: clampMaybeNumber(value?.defaultRatioGoal),
+		defaultSeedTimeGoalMinutes: clampMaybeInteger(value?.defaultSeedTimeGoalMinutes),
+		defaultStopOnRatio: Boolean(value?.defaultStopOnRatio),
+		defaultStopOnSeedTime: Boolean(value?.defaultStopOnSeedTime),
 	};
 }
 
@@ -324,10 +330,10 @@ function defaultControlState(queueOrder: number): TorrentControlState {
 		queueOrder,
 		downloadLimitBps: null,
 		uploadLimitBps: null,
-		ratioGoal: null,
-		seedTimeGoalMinutes: null,
-		stopOnRatio: false,
-		stopOnSeedTime: false,
+		ratioGoal: persistedGlobal.defaultRatioGoal,
+		seedTimeGoalMinutes: persistedGlobal.defaultSeedTimeGoalMinutes,
+		stopOnRatio: persistedGlobal.defaultStopOnRatio,
+		stopOnSeedTime: persistedGlobal.defaultStopOnSeedTime,
 		trackerUrls: [],
 		addedAt: new Date().toISOString(),
 		doneAt: null,
@@ -1201,6 +1207,22 @@ export function updateGlobalSettings(input: Partial<GlobalTorrentSettings>) {
 			input.maxActiveSeeders === undefined
 				? persistedGlobal.maxActiveSeeders
 				: clampMaybeInteger(input.maxActiveSeeders),
+		defaultRatioGoal:
+			input.defaultRatioGoal === undefined
+				? persistedGlobal.defaultRatioGoal
+				: clampMaybeNumber(input.defaultRatioGoal),
+		defaultSeedTimeGoalMinutes:
+			input.defaultSeedTimeGoalMinutes === undefined
+				? persistedGlobal.defaultSeedTimeGoalMinutes
+				: clampMaybeInteger(input.defaultSeedTimeGoalMinutes),
+		defaultStopOnRatio:
+			input.defaultStopOnRatio === undefined
+				? persistedGlobal.defaultStopOnRatio
+				: Boolean(input.defaultStopOnRatio),
+		defaultStopOnSeedTime:
+			input.defaultStopOnSeedTime === undefined
+				? persistedGlobal.defaultStopOnSeedTime
+				: Boolean(input.defaultStopOnSeedTime),
 	};
 
 	torrentClient.throttleDownload(persistedGlobal.downloadLimitBps ?? -1);

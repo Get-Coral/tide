@@ -32,6 +32,10 @@ function Home() {
 		uploadLimitBps: null,
 		maxActiveDownloads: null,
 		maxActiveSeeders: null,
+		defaultRatioGoal: null,
+		defaultSeedTimeGoalMinutes: null,
+		defaultStopOnRatio: false,
+		defaultStopOnSeedTime: false,
 	});
 	const [loading, setLoading] = useState(true);
 	const [busyId, setBusyId] = useState<string | null>(null);
