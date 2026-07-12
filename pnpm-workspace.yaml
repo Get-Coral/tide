@@ -1,0 +1,11 @@
+allowBuilds:
+  bufferutil: false
+  esbuild: true
+  node-datachannel: false
+  utf-8-validate: false
+  utp-native: false
+minimumReleaseAgeExclude:
+  - '@get-coral/jellyfin'
+  - '@get-coral/ui'
+  - '@get-coral/biome-config'
+  - '@get-coral/tsconfig'
