@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/Get-Coral/tide/compare/v1.2.0...v1.2.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* collapse split ternary in add-torrent handler to satisfy formatter ([67228cb](https://github.com/Get-Coral/tide/commit/67228cb1a72152ca15b2479a9fe2ec69947bdecb))
+
 ## [1.2.0](https://github.com/Get-Coral/tide/compare/v1.1.1...v1.2.0) (2026-04-19)
 
 
