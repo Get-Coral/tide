@@ -5,6 +5,10 @@ interface GlobalControlBody {
 	uploadLimitBps?: number | null;
 	maxActiveDownloads?: number | null;
 	maxActiveSeeders?: number | null;
+	defaultRatioGoal?: number | null;
+	defaultSeedTimeGoalMinutes?: number | null;
+	defaultStopOnRatio?: boolean;
+	defaultStopOnSeedTime?: boolean;
 }
 
 export const Route = createFileRoute("/api/torrents/control")({
@@ -22,6 +26,10 @@ export const Route = createFileRoute("/api/torrents/control")({
 					uploadLimitBps: payload.uploadLimitBps,
 					maxActiveDownloads: payload.maxActiveDownloads,
 					maxActiveSeeders: payload.maxActiveSeeders,
+					defaultRatioGoal: payload.defaultRatioGoal,
+					defaultSeedTimeGoalMinutes: payload.defaultSeedTimeGoalMinutes,
+					defaultStopOnRatio: payload.defaultStopOnRatio,
+					defaultStopOnSeedTime: payload.defaultStopOnSeedTime,
 				});
 				return Response.json({ global });
 			},

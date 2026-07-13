@@ -100,6 +100,10 @@ export function loadPersistedGlobalSettings() {
 		uploadLimitBps: null,
 		maxActiveDownloads: null,
 		maxActiveSeeders: null,
+		defaultRatioGoal: null,
+		defaultSeedTimeGoalMinutes: null,
+		defaultStopOnRatio: false,
+		defaultStopOnSeedTime: false,
 	});
 }
 
