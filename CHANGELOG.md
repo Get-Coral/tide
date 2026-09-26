@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.3.0](https://github.com/Get-Coral/tide/compare/v1.2.0...v1.3.0) (2026-09-26)
+
+
+### Features
+
+* default seeding goals for new torrents ([#10](https://github.com/Get-Coral/tide/issues/10)) ([f2545fc](https://github.com/Get-Coral/tide/commit/f2545fc496da172e9e77f6f9dbfcd295d4d09867)), closes [#9](https://github.com/Get-Coral/tide/issues/9)
+* give Tide its own brand mark and icon set ([2233eb4](https://github.com/Get-Coral/tide/commit/2233eb4be018661981bf355a9c34db6c138cd241))
+* new Tide brand mark and icon set ([788f37e](https://github.com/Get-Coral/tide/commit/788f37e2cea490d47151de70c0017c17c1f0e3e7))
+* optional Jellyfin sign-in with admin-gated management ([#37](https://github.com/Get-Coral/tide/issues/37)) ([a52a6ce](https://github.com/Get-Coral/tide/commit/a52a6ceef937ffa08901e1ef21e52f33050cfa0d)), closes [#12](https://github.com/Get-Coral/tide/issues/12)
+
+
+### Bug Fixes
+
+* collapse split ternary in add-torrent handler to satisfy formatter ([67228cb](https://github.com/Get-Coral/tide/commit/67228cb1a72152ca15b2479a9fe2ec69947bdecb))
+* drop the Docker Hub categories payload, which the API ignores ([#36](https://github.com/Get-Coral/tide/issues/36)) ([afa69c8](https://github.com/Get-Coral/tide/commit/afa69c88514173e5299d1256ca1011488d7b9f5b))
+* pin pnpm explicitly so release-please cannot break the build ([9a8e930](https://github.com/Get-Coral/tide/commit/9a8e9301a86a25ed33d3a01f350a7b3050002c06))
+* pin pnpm explicitly so release-please cannot break the build ([99982d6](https://github.com/Get-Coral/tide/commit/99982d63d1fbb4834fd128ef9778c162fce24f6f))
+* pin pnpm via packageManager field ([1978ed4](https://github.com/Get-Coral/tide/commit/1978ed4f5ea61bb373cbd459fef4ad0f476ae27a))
+
 ## [1.2.0](https://github.com/Get-Coral/tide/compare/v1.1.1...v1.2.0) (2026-04-19)
 
 
