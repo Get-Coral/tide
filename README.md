@@ -9,30 +9,20 @@
 
 ## Getting started
 
-### 1. Rename the module
-
-Replace `tide` with your module name throughout:
-
-```bash
-# package.json → "name"
-# .github/workflows/docker-publish.yml → IMAGE_NAME
-# .github/workflows/release-please.yml → image_name
-```
-
-### 2. Install dependencies
+### 1. Install dependencies
 
 ```bash
 pnpm install
 ```
 
-### 3. Configure environment
+### 2. Configure environment
 
 ```bash
 cp .env.example .env
 # Set your downloads directory, optional auth, and any other Tide settings
 ```
 
-### 4. Start developing
+### 3. Start developing
 
 ```bash
 pnpm dev
