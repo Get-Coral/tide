@@ -10,16 +10,26 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ManageRouteImport } from './routes/manage'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTorrentsIndexRouteImport } from './routes/api/torrents/index'
 import { Route as ApiTorrentsEventsRouteImport } from './routes/api/torrents/events'
 import { Route as ApiTorrentsControlRouteImport } from './routes/api/torrents/control'
+import { Route as ApiAuthSettingsRouteImport } from './routes/api/auth/settings'
+import { Route as ApiAuthSessionRouteImport } from './routes/api/auth/session'
+import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
+import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
 import { Route as ApiTorrentsIdIndexRouteImport } from './routes/api/torrents/$id/index'
 import { Route as ApiTorrentsIdStreamRouteImport } from './routes/api/torrents/$id/stream'
 
 const ManageRoute = ManageRouteImport.update({
   id: '/manage',
   path: '/manage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -42,6 +52,26 @@ const ApiTorrentsControlRoute = ApiTorrentsControlRouteImport.update({
   path: '/api/torrents/control',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthSettingsRoute = ApiAuthSettingsRouteImport.update({
+  id: '/api/auth/settings',
+  path: '/api/auth/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSessionRoute = ApiAuthSessionRouteImport.update({
+  id: '/api/auth/session',
+  path: '/api/auth/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthLogoutRoute = ApiAuthLogoutRouteImport.update({
+  id: '/api/auth/logout',
+  path: '/api/auth/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthLoginRoute = ApiAuthLoginRouteImport.update({
+  id: '/api/auth/login',
+  path: '/api/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTorrentsIdIndexRoute = ApiTorrentsIdIndexRouteImport.update({
   id: '/api/torrents/$id/',
   path: '/api/torrents/$id/',
@@ -55,7 +85,12 @@ const ApiTorrentsIdStreamRoute = ApiTorrentsIdStreamRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/manage': typeof ManageRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/session': typeof ApiAuthSessionRoute
+  '/api/auth/settings': typeof ApiAuthSettingsRoute
   '/api/torrents/control': typeof ApiTorrentsControlRoute
   '/api/torrents/events': typeof ApiTorrentsEventsRoute
   '/api/torrents/': typeof ApiTorrentsIndexRoute
@@ -64,7 +99,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/manage': typeof ManageRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/session': typeof ApiAuthSessionRoute
+  '/api/auth/settings': typeof ApiAuthSettingsRoute
   '/api/torrents/control': typeof ApiTorrentsControlRoute
   '/api/torrents/events': typeof ApiTorrentsEventsRoute
   '/api/torrents': typeof ApiTorrentsIndexRoute
@@ -74,7 +114,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/manage': typeof ManageRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/session': typeof ApiAuthSessionRoute
+  '/api/auth/settings': typeof ApiAuthSettingsRoute
   '/api/torrents/control': typeof ApiTorrentsControlRoute
   '/api/torrents/events': typeof ApiTorrentsEventsRoute
   '/api/torrents/': typeof ApiTorrentsIndexRoute
@@ -85,7 +130,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/manage'
+    | '/api/auth/login'
+    | '/api/auth/logout'
+    | '/api/auth/session'
+    | '/api/auth/settings'
     | '/api/torrents/control'
     | '/api/torrents/events'
     | '/api/torrents/'
@@ -94,7 +144,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/manage'
+    | '/api/auth/login'
+    | '/api/auth/logout'
+    | '/api/auth/session'
+    | '/api/auth/settings'
     | '/api/torrents/control'
     | '/api/torrents/events'
     | '/api/torrents'
@@ -103,7 +158,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/login'
     | '/manage'
+    | '/api/auth/login'
+    | '/api/auth/logout'
+    | '/api/auth/session'
+    | '/api/auth/settings'
     | '/api/torrents/control'
     | '/api/torrents/events'
     | '/api/torrents/'
@@ -113,7 +173,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
   ManageRoute: typeof ManageRoute
+  ApiAuthLoginRoute: typeof ApiAuthLoginRoute
+  ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
+  ApiAuthSessionRoute: typeof ApiAuthSessionRoute
+  ApiAuthSettingsRoute: typeof ApiAuthSettingsRoute
   ApiTorrentsControlRoute: typeof ApiTorrentsControlRoute
   ApiTorrentsEventsRoute: typeof ApiTorrentsEventsRoute
   ApiTorrentsIndexRoute: typeof ApiTorrentsIndexRoute
@@ -128,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/manage'
       fullPath: '/manage'
       preLoaderRoute: typeof ManageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -158,6 +230,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTorrentsControlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/settings': {
+      id: '/api/auth/settings'
+      path: '/api/auth/settings'
+      fullPath: '/api/auth/settings'
+      preLoaderRoute: typeof ApiAuthSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/session': {
+      id: '/api/auth/session'
+      path: '/api/auth/session'
+      fullPath: '/api/auth/session'
+      preLoaderRoute: typeof ApiAuthSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/logout': {
+      id: '/api/auth/logout'
+      path: '/api/auth/logout'
+      fullPath: '/api/auth/logout'
+      preLoaderRoute: typeof ApiAuthLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/login': {
+      id: '/api/auth/login'
+      path: '/api/auth/login'
+      fullPath: '/api/auth/login'
+      preLoaderRoute: typeof ApiAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/torrents/$id/': {
       id: '/api/torrents/$id/'
       path: '/api/torrents/$id'
@@ -177,7 +277,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
   ManageRoute: ManageRoute,
+  ApiAuthLoginRoute: ApiAuthLoginRoute,
+  ApiAuthLogoutRoute: ApiAuthLogoutRoute,
+  ApiAuthSessionRoute: ApiAuthSessionRoute,
+  ApiAuthSettingsRoute: ApiAuthSettingsRoute,
   ApiTorrentsControlRoute: ApiTorrentsControlRoute,
   ApiTorrentsEventsRoute: ApiTorrentsEventsRoute,
   ApiTorrentsIndexRoute: ApiTorrentsIndexRoute,

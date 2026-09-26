@@ -81,6 +81,38 @@ docker run -p 3000:3000 \
   tide
 ```
 
+## Access control
+
+Tide has two independent layers, both optional.
+
+**HTTP basic auth** — set `TIDE_AUTH_USERNAME` and `TIDE_AUTH_PASSWORD` and the production server
+challenges every request before it reaches the app. It is a blunt front door with a single shared
+credential, and it is not applied by `pnpm dev`.
+
+**Jellyfin sign-in** — Tide can require a Jellyfin account instead of, or on top of, basic auth.
+It is off by default.
+
+1. On `/manage`, set the **Jellyfin server URL** under *Access* (or set `TIDE_JELLYFIN_URL`). Tide
+   verifies the URL against `/System/Info/Public` before storing it.
+2. Turn on **Require a Jellyfin sign-in**. Tide refuses to enable this until a server is reachable,
+   so you cannot lock yourself out of a Tide that has nowhere to authenticate.
+
+Once required:
+
+- Everyone must sign in with their Jellyfin username and password at `/login`.
+- Signed-in users get the board, the live stream, and read-only API access.
+- `/manage` and every mutating endpoint are limited to **Jellyfin administrators**.
+- Signing out of Tide also revokes the Jellyfin access token it was issued.
+
+Tide stores **no Jellyfin API key** — only the server URL. Authentication uses Jellyfin's public
+`AuthenticateByName` endpoint, so there is no server-wide credential for Tide to leak.
+
+Sessions live in the same SQLite database as the rest of Tide's state and survive restarts. If you
+ever lock yourself out (server moved, URL wrong), start Tide with `TIDE_REQUIRE_LOGIN=false` — the
+env var overrides the stored setting in both directions.
+
+---
+
 ## Memory safety
 
 Tide now includes an RSS-based memory guard for torrent activity.

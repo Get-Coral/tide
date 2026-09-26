@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireSession } from "#/server/auth-guards";
 
 function sseData(value: unknown) {
 	return `data: ${JSON.stringify(value)}\n\n`;
@@ -8,6 +9,9 @@ export const Route = createFileRoute("/api/torrents/events")({
 	server: {
 		handlers: {
 			GET: async ({ request }) => {
+				const { denied } = await requireSession(request);
+				if (denied) return denied;
+
 				const { listTorrents, subscribeToTorrentUpdates } = await import(
 					"#/server/modules/torrent/manager"
 				);

@@ -94,6 +94,23 @@ function setSetting<T>(key: string, value: T) {
 	getDatabase().prepare(UPSERT_SETTING_SQL).run(key, JSON.stringify(value));
 }
 
+/**
+ * The shared SQLite handle. Exposed so sibling stores (auth sessions, the
+ * Jellyfin connection) reuse one connection, one `TIDE_DATA_DIR` resolution,
+ * and one `app_settings` table instead of opening the database twice.
+ */
+export function getAppDatabase() {
+	return getDatabase();
+}
+
+export function getAppSetting<T>(key: string, fallback: T): T {
+	return getSetting(key, fallback);
+}
+
+export function setAppSetting<T>(key: string, value: T) {
+	setSetting(key, value);
+}
+
 export function loadPersistedGlobalSettings() {
 	return getSetting<GlobalTorrentSettings>("torrent.global", {
 		downloadLimitBps: null,
