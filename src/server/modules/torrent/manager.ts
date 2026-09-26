@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type WebTorrent from "webtorrent";
 import { downloadsPath, incompletePath, torrentClient } from "./client";
+import { resolveDownloadPath } from "./paths";
 import {
 	deletePersistedTorrent,
 	deletePersistedTorrentControl,
@@ -1368,6 +1369,11 @@ export function addTorrent(input: AddTorrentInput) {
 		throw new Error("Magnet link is required.");
 	}
 
+	const downloadPath = resolveDownloadPath(input.path, {
+		downloads: downloadsPath,
+		incomplete: incompletePath,
+	});
+
 	const existing = findExistingTorrentForInput(magnet);
 	if (existing) {
 		throw new Error(`Torrent already exists: ${existing.name || existing.infoHash}`);
@@ -1376,7 +1382,7 @@ export function addTorrent(input: AddTorrentInput) {
 	// torrentClient.add() is synchronous — the torrent (with infoHash from the magnet URI)
 	// is available immediately. We don't wait for "ready" so the UI unblocks at once.
 	// Metadata, name, and files arrive later and are pushed via SSE.
-	const torrent = torrentClient.add(magnet, { path: input.path || incompletePath });
+	const torrent = torrentClient.add(magnet, { path: downloadPath });
 	restoredMagnets.add(torrent.magnetURI);
 	wireTorrent(torrent);
 	savePersistedTorrent(torrent.infoHash, torrent.magnetURI, torrent.path ?? null);
