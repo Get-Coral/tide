@@ -45,6 +45,10 @@ function ManageRoute() {
 	const [globalUpInput, setGlobalUpInput] = useState("");
 	const [maxDownloadsInput, setMaxDownloadsInput] = useState("");
 	const [maxSeedersInput, setMaxSeedersInput] = useState("");
+	const [defaultRatioInput, setDefaultRatioInput] = useState("");
+	const [defaultSeedMinutesInput, setDefaultSeedMinutesInput] = useState("");
+	const [defaultStopOnRatio, setDefaultStopOnRatio] = useState(false);
+	const [defaultStopOnSeedTime, setDefaultStopOnSeedTime] = useState(false);
 
 	useEffect(() => {
 		let active = true;
@@ -63,6 +67,10 @@ function ManageRoute() {
 				setGlobalUpInput(toLimitInput(next.global.uploadLimitBps));
 				setMaxDownloadsInput(toQueueInput(next.global.maxActiveDownloads));
 				setMaxSeedersInput(toQueueInput(next.global.maxActiveSeeders));
+				setDefaultRatioInput(toRatioInput(next.global.defaultRatioGoal));
+				setDefaultSeedMinutesInput(toQueueInput(next.global.defaultSeedTimeGoalMinutes));
+				setDefaultStopOnRatio(next.global.defaultStopOnRatio);
+				setDefaultStopOnSeedTime(next.global.defaultStopOnSeedTime);
 				setError(null);
 			} else {
 				setError(
@@ -105,6 +113,10 @@ function ManageRoute() {
 					setGlobalUpInput(toLimitInput(payload.global.uploadLimitBps));
 					setMaxDownloadsInput(toQueueInput(payload.global.maxActiveDownloads));
 					setMaxSeedersInput(toQueueInput(payload.global.maxActiveSeeders));
+					setDefaultRatioInput(toRatioInput(payload.global.defaultRatioGoal));
+					setDefaultSeedMinutesInput(toQueueInput(payload.global.defaultSeedTimeGoalMinutes));
+					setDefaultStopOnRatio(payload.global.defaultStopOnRatio);
+					setDefaultStopOnSeedTime(payload.global.defaultStopOnSeedTime);
 				}
 				setLoading(false);
 			} catch {
@@ -178,6 +190,10 @@ function ManageRoute() {
 				uploadLimitBps: fromLimitInput(globalUpInput),
 				maxActiveDownloads: fromQueueInput(maxDownloadsInput),
 				maxActiveSeeders: fromQueueInput(maxSeedersInput),
+				defaultRatioGoal: fromRatioInput(defaultRatioInput),
+				defaultSeedTimeGoalMinutes: fromQueueInput(defaultSeedMinutesInput),
+				defaultStopOnRatio,
+				defaultStopOnSeedTime,
 			});
 			setError(null);
 		} catch (requestError) {
@@ -296,6 +312,44 @@ function ManageRoute() {
 									onChange={(event) => setMaxSeedersInput(event.target.value)}
 									placeholder="Unlimited"
 								/>
+								<label className="tide-label" htmlFor="default-ratio">
+									Default ratio goal
+								</label>
+								<input
+									id="default-ratio"
+									className="tide-input"
+									value={defaultRatioInput}
+									onChange={(event) => setDefaultRatioInput(event.target.value)}
+									placeholder="No goal"
+								/>
+								<label className="tide-label" htmlFor="default-seed-minutes">
+									Default seed minutes goal
+								</label>
+								<input
+									id="default-seed-minutes"
+									className="tide-input"
+									value={defaultSeedMinutesInput}
+									onChange={(event) => setDefaultSeedMinutesInput(event.target.value)}
+									placeholder="No goal"
+								/>
+								<label className="tide-toggle" htmlFor="default-stop-on-ratio">
+									<input
+										id="default-stop-on-ratio"
+										type="checkbox"
+										checked={defaultStopOnRatio}
+										onChange={(event) => setDefaultStopOnRatio(event.target.checked)}
+									/>
+									<span>Stop new torrents on ratio goal by default</span>
+								</label>
+								<label className="tide-toggle" htmlFor="default-stop-on-seed-time">
+									<input
+										id="default-stop-on-seed-time"
+										type="checkbox"
+										checked={defaultStopOnSeedTime}
+										onChange={(event) => setDefaultStopOnSeedTime(event.target.checked)}
+									/>
+									<span>Stop new torrents on seed-time goal by default</span>
+								</label>
 								<CoralButton type="submit" disabled={busy}>
 									Save settings
 								</CoralButton>
@@ -640,6 +694,19 @@ function fromQueueInput(value: string) {
 	const trimmed = value.trim();
 	if (!trimmed) return null;
 	const parsed = Number.parseInt(trimmed, 10);
+	if (!Number.isFinite(parsed) || parsed < 0) return null;
+	return parsed;
+}
+
+function toRatioInput(value: number | null | undefined) {
+	if (value == null) return "";
+	return String(value);
+}
+
+function fromRatioInput(value: string) {
+	const trimmed = value.trim();
+	if (!trimmed) return null;
+	const parsed = Number.parseFloat(trimmed);
 	if (!Number.isFinite(parsed) || parsed < 0) return null;
 	return parsed;
 }
