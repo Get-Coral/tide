@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0" stop-color="#101a25"></stop><stop offset="1" stop-color="#070d13"></stop>
+    </linearGradient>
+    <radialGradient id="glow" gradientUnits="userSpaceOnUse" cx="256" cy="200" r="240">
+      <stop offset="0" stop-color="#f28862" stop-opacity="0.34"></stop>
+      <stop offset="1" stop-color="#f28862" stop-opacity="0"></stop>
+    </radialGradient>
+    <radialGradient id="glowDeep" gradientUnits="userSpaceOnUse" cx="256" cy="360" r="240">
+      <stop offset="0" stop-color="#65c8b8" stop-opacity="0.26"></stop>
+      <stop offset="1" stop-color="#65c8b8" stop-opacity="0"></stop>
+    </radialGradient>
+
+    <clipPath id="cutCrest"><rect x="0" y="0" width="88" height="30.2"></rect></clipPath>
+    <clipPath id="cutDeep"><rect x="0" y="33.8" width="88" height="30.2"></rect></clipPath>
+    <linearGradient id="fillCrest" gradientUnits="userSpaceOnUse" x1="8" y1="0" x2="80" y2="0">
+      <stop offset="0" stop-color="#ffd9c6"></stop><stop offset="1" stop-color="#f28862"></stop>
+    </linearGradient>
+    <linearGradient id="fillDeep" gradientUnits="userSpaceOnUse" x1="8" y1="0" x2="80" y2="0">
+      <stop offset="0" stop-color="#65c8b8"></stop><stop offset="1" stop-color="#3f9ec4"></stop>
+    </linearGradient>
+    <linearGradient id="waterline" gradientUnits="userSpaceOnUse" x1="2" y1="32" x2="86" y2="32">
+      <stop offset="0" stop-color="#f28862" stop-opacity="0"></stop>
+      <stop offset="0.3" stop-color="#f28862"></stop>
+      <stop offset="0.7" stop-color="#65c8b8"></stop>
+      <stop offset="1" stop-color="#65c8b8" stop-opacity="0"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bg)"></rect>
+  <rect width="512" height="512" rx="128" fill="url(#glow)"></rect>
+  <rect width="512" height="512" rx="128" fill="url(#glowDeep)"></rect>
+  <g transform="translate(256 256) scale(4.1) translate(-44 -32)">
+    <g fill="none" stroke-width="8" stroke-linecap="butt">
+      <path d="M8 32 c8,22 16,22 24,0 c8,-22 16,-22 24,0 c8,22 16,22 24,0" stroke="url(#fillCrest)" clip-path="url(#cutCrest)"></path>
+      <path d="M8 32 c8,22 16,22 24,0 c8,-22 16,-22 24,0 c8,22 16,22 24,0" stroke="url(#fillDeep)" clip-path="url(#cutDeep)" opacity="0.85"></path>
+    </g>
+    <line x1="2" y1="32" x2="86" y2="32" stroke="url(#waterline)" stroke-width="3" stroke-linecap="round"></line>
+  </g>
+</svg>
