@@ -131,7 +131,10 @@ TIDE_MEMORY_PAUSE_MB=7168
 TIDE_MEMORY_RESUME_MB=6144
 ```
 
-Published automatically to `ghcr.io/get-coral/<module-name>` on every release via GitHub Actions.
+Published automatically on every release via GitHub Actions:
+
+- `getcoral/tide` on Docker Hub
+- `ghcr.io/get-coral/tide` on GHCR
 
 ---
 
