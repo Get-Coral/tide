@@ -106,6 +106,11 @@ function isAuthorized(req) {
   }
 }
 
+/** `/api/coral` and anything beneath it, and nothing that merely starts the same. */
+function isCoralApi(url) {
+  return url.pathname === '/api/coral' || url.pathname.startsWith('/api/coral/');
+}
+
 function rejectUnauthorized(res) {
   res.statusCode = 401;
   res.setHeader('www-authenticate', 'Basic realm="Tide"');
@@ -124,7 +129,12 @@ const nodeServer = http.createServer(async (req, res) => {
       return;
     }
 
-    if (!isAuthorized(req)) {
+    // Cross-module callers authenticate with a Bearer service token, which
+    // HTTP basic in front of everything would reject before the router ever
+    // saw it. The router is the real gate on these: every /api/coral/* route
+    // runs `requireServiceAuth`, which is stricter than basic auth and does
+    // not have basic auth's "not configured, so allow everything" default.
+    if (!isCoralApi(url) && !isAuthorized(req)) {
       rejectUnauthorized(res);
       return;
     }

@@ -13,8 +13,13 @@ import { Route as ManageRouteImport } from './routes/manage'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTorrentsIndexRouteImport } from './routes/api/torrents/index'
+import { Route as ApiServiceTokensIndexRouteImport } from './routes/api/service-tokens/index'
 import { Route as ApiTorrentsEventsRouteImport } from './routes/api/torrents/events'
 import { Route as ApiTorrentsControlRouteImport } from './routes/api/torrents/control'
+import { Route as ApiServiceTokensIdRouteImport } from './routes/api/service-tokens/$id'
+import { Route as ApiCoralManifestRouteImport } from './routes/api/coral/manifest'
+import { Route as ApiCoralEventsRouteImport } from './routes/api/coral/events'
+import { Route as ApiCoralDownloadsRouteImport } from './routes/api/coral/downloads'
 import { Route as ApiAuthSettingsRouteImport } from './routes/api/auth/settings'
 import { Route as ApiAuthSessionRouteImport } from './routes/api/auth/session'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
@@ -42,6 +47,11 @@ const ApiTorrentsIndexRoute = ApiTorrentsIndexRouteImport.update({
   path: '/api/torrents/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiServiceTokensIndexRoute = ApiServiceTokensIndexRouteImport.update({
+  id: '/api/service-tokens/',
+  path: '/api/service-tokens/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTorrentsEventsRoute = ApiTorrentsEventsRouteImport.update({
   id: '/api/torrents/events',
   path: '/api/torrents/events',
@@ -50,6 +60,26 @@ const ApiTorrentsEventsRoute = ApiTorrentsEventsRouteImport.update({
 const ApiTorrentsControlRoute = ApiTorrentsControlRouteImport.update({
   id: '/api/torrents/control',
   path: '/api/torrents/control',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiServiceTokensIdRoute = ApiServiceTokensIdRouteImport.update({
+  id: '/api/service-tokens/$id',
+  path: '/api/service-tokens/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCoralManifestRoute = ApiCoralManifestRouteImport.update({
+  id: '/api/coral/manifest',
+  path: '/api/coral/manifest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCoralEventsRoute = ApiCoralEventsRouteImport.update({
+  id: '/api/coral/events',
+  path: '/api/coral/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCoralDownloadsRoute = ApiCoralDownloadsRouteImport.update({
+  id: '/api/coral/downloads',
+  path: '/api/coral/downloads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSettingsRoute = ApiAuthSettingsRouteImport.update({
@@ -91,8 +121,13 @@ export interface FileRoutesByFullPath {
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/auth/settings': typeof ApiAuthSettingsRoute
+  '/api/coral/downloads': typeof ApiCoralDownloadsRoute
+  '/api/coral/events': typeof ApiCoralEventsRoute
+  '/api/coral/manifest': typeof ApiCoralManifestRoute
+  '/api/service-tokens/$id': typeof ApiServiceTokensIdRoute
   '/api/torrents/control': typeof ApiTorrentsControlRoute
   '/api/torrents/events': typeof ApiTorrentsEventsRoute
+  '/api/service-tokens/': typeof ApiServiceTokensIndexRoute
   '/api/torrents/': typeof ApiTorrentsIndexRoute
   '/api/torrents/$id/stream': typeof ApiTorrentsIdStreamRoute
   '/api/torrents/$id/': typeof ApiTorrentsIdIndexRoute
@@ -105,8 +140,13 @@ export interface FileRoutesByTo {
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/auth/settings': typeof ApiAuthSettingsRoute
+  '/api/coral/downloads': typeof ApiCoralDownloadsRoute
+  '/api/coral/events': typeof ApiCoralEventsRoute
+  '/api/coral/manifest': typeof ApiCoralManifestRoute
+  '/api/service-tokens/$id': typeof ApiServiceTokensIdRoute
   '/api/torrents/control': typeof ApiTorrentsControlRoute
   '/api/torrents/events': typeof ApiTorrentsEventsRoute
+  '/api/service-tokens': typeof ApiServiceTokensIndexRoute
   '/api/torrents': typeof ApiTorrentsIndexRoute
   '/api/torrents/$id/stream': typeof ApiTorrentsIdStreamRoute
   '/api/torrents/$id': typeof ApiTorrentsIdIndexRoute
@@ -120,8 +160,13 @@ export interface FileRoutesById {
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/auth/settings': typeof ApiAuthSettingsRoute
+  '/api/coral/downloads': typeof ApiCoralDownloadsRoute
+  '/api/coral/events': typeof ApiCoralEventsRoute
+  '/api/coral/manifest': typeof ApiCoralManifestRoute
+  '/api/service-tokens/$id': typeof ApiServiceTokensIdRoute
   '/api/torrents/control': typeof ApiTorrentsControlRoute
   '/api/torrents/events': typeof ApiTorrentsEventsRoute
+  '/api/service-tokens/': typeof ApiServiceTokensIndexRoute
   '/api/torrents/': typeof ApiTorrentsIndexRoute
   '/api/torrents/$id/stream': typeof ApiTorrentsIdStreamRoute
   '/api/torrents/$id/': typeof ApiTorrentsIdIndexRoute
@@ -136,8 +181,13 @@ export interface FileRouteTypes {
     | '/api/auth/logout'
     | '/api/auth/session'
     | '/api/auth/settings'
+    | '/api/coral/downloads'
+    | '/api/coral/events'
+    | '/api/coral/manifest'
+    | '/api/service-tokens/$id'
     | '/api/torrents/control'
     | '/api/torrents/events'
+    | '/api/service-tokens/'
     | '/api/torrents/'
     | '/api/torrents/$id/stream'
     | '/api/torrents/$id/'
@@ -150,8 +200,13 @@ export interface FileRouteTypes {
     | '/api/auth/logout'
     | '/api/auth/session'
     | '/api/auth/settings'
+    | '/api/coral/downloads'
+    | '/api/coral/events'
+    | '/api/coral/manifest'
+    | '/api/service-tokens/$id'
     | '/api/torrents/control'
     | '/api/torrents/events'
+    | '/api/service-tokens'
     | '/api/torrents'
     | '/api/torrents/$id/stream'
     | '/api/torrents/$id'
@@ -164,8 +219,13 @@ export interface FileRouteTypes {
     | '/api/auth/logout'
     | '/api/auth/session'
     | '/api/auth/settings'
+    | '/api/coral/downloads'
+    | '/api/coral/events'
+    | '/api/coral/manifest'
+    | '/api/service-tokens/$id'
     | '/api/torrents/control'
     | '/api/torrents/events'
+    | '/api/service-tokens/'
     | '/api/torrents/'
     | '/api/torrents/$id/stream'
     | '/api/torrents/$id/'
@@ -179,8 +239,13 @@ export interface RootRouteChildren {
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthSessionRoute: typeof ApiAuthSessionRoute
   ApiAuthSettingsRoute: typeof ApiAuthSettingsRoute
+  ApiCoralDownloadsRoute: typeof ApiCoralDownloadsRoute
+  ApiCoralEventsRoute: typeof ApiCoralEventsRoute
+  ApiCoralManifestRoute: typeof ApiCoralManifestRoute
+  ApiServiceTokensIdRoute: typeof ApiServiceTokensIdRoute
   ApiTorrentsControlRoute: typeof ApiTorrentsControlRoute
   ApiTorrentsEventsRoute: typeof ApiTorrentsEventsRoute
+  ApiServiceTokensIndexRoute: typeof ApiServiceTokensIndexRoute
   ApiTorrentsIndexRoute: typeof ApiTorrentsIndexRoute
   ApiTorrentsIdStreamRoute: typeof ApiTorrentsIdStreamRoute
   ApiTorrentsIdIndexRoute: typeof ApiTorrentsIdIndexRoute
@@ -216,6 +281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTorrentsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/service-tokens/': {
+      id: '/api/service-tokens/'
+      path: '/api/service-tokens'
+      fullPath: '/api/service-tokens/'
+      preLoaderRoute: typeof ApiServiceTokensIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/torrents/events': {
       id: '/api/torrents/events'
       path: '/api/torrents/events'
@@ -228,6 +300,34 @@ declare module '@tanstack/react-router' {
       path: '/api/torrents/control'
       fullPath: '/api/torrents/control'
       preLoaderRoute: typeof ApiTorrentsControlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/service-tokens/$id': {
+      id: '/api/service-tokens/$id'
+      path: '/api/service-tokens/$id'
+      fullPath: '/api/service-tokens/$id'
+      preLoaderRoute: typeof ApiServiceTokensIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/coral/manifest': {
+      id: '/api/coral/manifest'
+      path: '/api/coral/manifest'
+      fullPath: '/api/coral/manifest'
+      preLoaderRoute: typeof ApiCoralManifestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/coral/events': {
+      id: '/api/coral/events'
+      path: '/api/coral/events'
+      fullPath: '/api/coral/events'
+      preLoaderRoute: typeof ApiCoralEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/coral/downloads': {
+      id: '/api/coral/downloads'
+      path: '/api/coral/downloads'
+      fullPath: '/api/coral/downloads'
+      preLoaderRoute: typeof ApiCoralDownloadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/settings': {
@@ -283,8 +383,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthSessionRoute: ApiAuthSessionRoute,
   ApiAuthSettingsRoute: ApiAuthSettingsRoute,
+  ApiCoralDownloadsRoute: ApiCoralDownloadsRoute,
+  ApiCoralEventsRoute: ApiCoralEventsRoute,
+  ApiCoralManifestRoute: ApiCoralManifestRoute,
+  ApiServiceTokensIdRoute: ApiServiceTokensIdRoute,
   ApiTorrentsControlRoute: ApiTorrentsControlRoute,
   ApiTorrentsEventsRoute: ApiTorrentsEventsRoute,
+  ApiServiceTokensIndexRoute: ApiServiceTokensIndexRoute,
   ApiTorrentsIndexRoute: ApiTorrentsIndexRoute,
   ApiTorrentsIdStreamRoute: ApiTorrentsIdStreamRoute,
   ApiTorrentsIdIndexRoute: ApiTorrentsIdIndexRoute,

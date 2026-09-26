@@ -2,6 +2,7 @@ import { CoralButton, CoralCard, CoralSection } from "@get-coral/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { AccessSettingsCard } from "#/components/access-settings";
+import { ServiceTokensCard } from "#/components/service-tokens";
 import { SessionBar } from "#/components/session-bar";
 import { requireAdminUser } from "#/lib/route-guards";
 import {
@@ -389,6 +390,8 @@ function ManageRoute() {
 					</CoralSection>
 
 					<AccessSettingsCard />
+
+					<ServiceTokensCard />
 				</div>
 
 				<CoralSection
