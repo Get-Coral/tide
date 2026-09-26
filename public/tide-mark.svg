@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 64" width="88" height="64">
+  <defs>
+    <clipPath id="cutCrest"><rect x="0" y="0" width="88" height="30.6"></rect></clipPath>
+    <clipPath id="cutDeep"><rect x="0" y="33.4" width="88" height="30.6"></rect></clipPath>
+    <linearGradient id="fillCrest" gradientUnits="userSpaceOnUse" x1="8" y1="0" x2="80" y2="0">
+      <stop offset="0" stop-color="#ffd9c6"></stop><stop offset="1" stop-color="#f28862"></stop>
+    </linearGradient>
+    <linearGradient id="fillDeep" gradientUnits="userSpaceOnUse" x1="8" y1="0" x2="80" y2="0">
+      <stop offset="0" stop-color="#65c8b8"></stop><stop offset="1" stop-color="#3f9ec4"></stop>
+    </linearGradient>
+    <linearGradient id="waterline" gradientUnits="userSpaceOnUse" x1="4" y1="32" x2="84" y2="32">
+      <stop offset="0" stop-color="#f28862" stop-opacity="0"></stop>
+      <stop offset="0.3" stop-color="#f28862"></stop>
+      <stop offset="0.7" stop-color="#65c8b8"></stop>
+      <stop offset="1" stop-color="#65c8b8" stop-opacity="0"></stop>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke-width="7" stroke-linecap="butt">
+    <path d="M8 32 c8,22 16,22 24,0 c8,-22 16,-22 24,0 c8,22 16,22 24,0" stroke="url(#fillCrest)" clip-path="url(#cutCrest)"></path>
+    <path d="M8 32 c8,22 16,22 24,0 c8,-22 16,-22 24,0 c8,22 16,22 24,0" stroke="url(#fillDeep)" clip-path="url(#cutDeep)" opacity="0.85"></path>
+  </g>
+  <line x1="4" y1="32" x2="84" y2="32" stroke="url(#waterline)" stroke-width="2.5" stroke-linecap="round"></line>
+</svg>
