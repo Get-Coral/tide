@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireAdmin, requireSession } from "#/server/auth-guards";
 
 interface GlobalControlBody {
 	downloadLimitBps?: number | null;
@@ -10,11 +11,17 @@ interface GlobalControlBody {
 export const Route = createFileRoute("/api/torrents/control")({
 	server: {
 		handlers: {
-			GET: async () => {
+			GET: async ({ request }) => {
+				const { denied } = await requireSession(request);
+				if (denied) return denied;
+
 				const { getAppSettingsSummary } = await import("#/server/modules/torrent/manager");
 				return Response.json({ app: getAppSettingsSummary() });
 			},
 			POST: async ({ request }) => {
+				const { denied } = await requireAdmin(request);
+				if (denied) return denied;
+
 				const payload = (await request.json()) as GlobalControlBody;
 				const { updateGlobalSettings } = await import("#/server/modules/torrent/manager");
 				const global = updateGlobalSettings({

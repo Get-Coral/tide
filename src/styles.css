@@ -46,6 +46,10 @@
   gap: 1.5rem;
 }
 
+.tide-layout--narrow {
+  max-width: 32rem;
+}
+
 .tide-hero-row,
 .tide-top-nav,
 .tide-toolbar,
@@ -190,6 +194,24 @@
 .tide-error {
   font-size: 0.88rem;
   color: var(--color-coral);
+}
+
+.tide-notice {
+  font-size: 0.88rem;
+  color: var(--color-teal);
+}
+
+.tide-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-ink-muted);
+}
+
+.tide-session-note {
+  font-size: 0.8rem;
+  color: var(--color-ink-muted);
 }
 
 .tide-list,

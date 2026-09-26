@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireSession } from "#/server/auth-guards";
 
 const VIDEO_EXTENSIONS = [".mkv", ".mp4", ".mov", ".avi", ".webm", ".m4v"];
 
@@ -30,6 +31,9 @@ export const Route = createFileRoute("/api/torrents/$id/stream")({
 	server: {
 		handlers: {
 			GET: async ({ params, request }) => {
+				const { denied } = await requireSession(request);
+				if (denied) return denied;
+
 				const { getTorrentById } = await import("#/server/modules/torrent/manager");
 				const torrent = getTorrentById(params.id);
 				if (!torrent) {

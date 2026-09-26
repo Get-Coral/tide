@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireAdmin, requireSession } from "#/server/auth-guards";
 
 interface ControlBody {
 	action?: "pause" | "resume" | "reannounce";
@@ -21,7 +22,10 @@ interface ControlBody {
 export const Route = createFileRoute("/api/torrents/$id/")({
 	server: {
 		handlers: {
-			GET: async ({ params }) => {
+			GET: async ({ params, request }) => {
+				const { denied } = await requireSession(request);
+				if (denied) return denied;
+
 				const { getTorrentById, toTorrentSnapshot } = await import(
 					"#/server/modules/torrent/manager"
 				);
@@ -31,7 +35,10 @@ export const Route = createFileRoute("/api/torrents/$id/")({
 				}
 				return Response.json(toTorrentSnapshot(torrent));
 			},
-			DELETE: async ({ params }) => {
+			DELETE: async ({ params, request }) => {
+				const { denied } = await requireAdmin(request);
+				if (denied) return denied;
+
 				const { removeTorrent } = await import("#/server/modules/torrent/manager");
 				const removed = await removeTorrent(params.id);
 				if (!removed) {
@@ -40,6 +47,9 @@ export const Route = createFileRoute("/api/torrents/$id/")({
 				return new Response(null, { status: 204 });
 			},
 			POST: async ({ params, request }) => {
+				const { denied } = await requireAdmin(request);
+				if (denied) return denied;
+
 				const payload = (await request.json()) as ControlBody;
 				const { updateTorrentControl } = await import("#/server/modules/torrent/manager");
 				const updated = await updateTorrentControl(params.id, payload);

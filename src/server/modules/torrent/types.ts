@@ -104,7 +104,6 @@ export interface AppTorrentSettingsSummary {
 	downloadsEnvVar: string;
 	databasePath: string;
 	basicAuthEnabled: boolean;
-	basicAuthUsername: string | null;
 	memoryGuardEnabled: boolean;
 	memoryGuardSource: "env" | "cgroup" | "disabled";
 	memoryGuardLimitMb: number | null;

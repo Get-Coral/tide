@@ -1,6 +1,9 @@
 import { CoralButton, CoralCard, CoralSection } from "@get-coral/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { AccessSettingsCard } from "#/components/access-settings";
+import { SessionBar } from "#/components/session-bar";
+import { requireAdminUser } from "#/lib/route-guards";
 import {
 	compareTorrents,
 	formatBytes,
@@ -23,10 +26,12 @@ import {
 } from "#/lib/torrents";
 
 export const Route = createFileRoute("/manage")({
+	beforeLoad: ({ location }) => requireAdminUser(location.href),
 	component: ManageRoute,
 });
 
 function ManageRoute() {
+	const { session } = Route.useRouteContext();
 	const [items, setItems] = useState<TorrentSnapshot[]>([]);
 	const [app, setApp] = useState<AppTorrentSettingsSummary | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -194,6 +199,7 @@ function ManageRoute() {
 						<Link to="/" className="tide-watch-link">
 							Back to board
 						</Link>
+						<SessionBar session={session} />
 						<div className="tide-sort-row">
 							<label htmlFor="manage-sort" className="tide-sort-label">
 								Sort
@@ -307,11 +313,7 @@ function ManageRoute() {
 									<SettingRow label="SQLite database" value={app.databasePath} />
 									<SettingRow
 										label="Basic auth"
-										value={
-											app.basicAuthEnabled
-												? `Enabled for ${app.basicAuthUsername ?? "configured user"}`
-												: "Disabled"
-										}
+										value={app.basicAuthEnabled ? "Enabled" : "Disabled"}
 									/>
 									<SettingRow label="Auth .env" value="TIDE_AUTH_USERNAME and TIDE_AUTH_PASSWORD" />
 									<SettingRow
@@ -331,6 +333,8 @@ function ManageRoute() {
 							</CoralCard>
 						) : null}
 					</CoralSection>
+
+					<AccessSettingsCard />
 				</div>
 
 				<CoralSection

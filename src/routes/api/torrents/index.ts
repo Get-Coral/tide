@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireAdmin, requireSession } from "#/server/auth-guards";
 
 interface AddTorrentBody {
 	magnet?: string;
@@ -8,13 +9,19 @@ interface AddTorrentBody {
 export const Route = createFileRoute("/api/torrents/")({
 	server: {
 		handlers: {
-			GET: async () => {
+			GET: async ({ request }) => {
+				const { denied } = await requireSession(request);
+				if (denied) return denied;
+
 				const { getGlobalSettings, listTorrents } = await import(
 					"#/server/modules/torrent/manager"
 				);
 				return Response.json({ items: listTorrents(), global: getGlobalSettings() });
 			},
 			POST: async ({ request }) => {
+				const { denied } = await requireAdmin(request);
+				if (denied) return denied;
+
 				const payload = (await request.json()) as AddTorrentBody;
 				if (!payload?.magnet || typeof payload.magnet !== "string") {
 					return new Response("Missing magnet in request body.", { status: 400 });

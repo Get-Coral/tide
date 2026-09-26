@@ -1,6 +1,9 @@
 import { CoralButton, CoralCard, CoralSection } from "@get-coral/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { type CSSProperties, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { SessionBar } from "#/components/session-bar";
+import { getSessionState } from "#/lib/auth";
+import { requireSignedIn } from "#/lib/route-guards";
 import {
 	compareTorrents,
 	formatBytes,
@@ -20,12 +23,14 @@ import {
 } from "#/lib/torrents";
 
 export const Route = createFileRoute("/")({
+	beforeLoad: ({ location }) => requireSignedIn(location.href),
 	component: Home,
 });
 
 type FilterMode = "all" | TorrentSnapshot["state"];
 
 function Home() {
+	const { session } = Route.useRouteContext();
 	const [items, setItems] = useState<TorrentSnapshot[]>([]);
 	const [global, setGlobal] = useState<GlobalTorrentSettings>({
 		downloadLimitBps: null,
@@ -96,9 +101,21 @@ function Home() {
 			}
 		};
 		source.onerror = () => {
-			if (active) {
-				setError("Live updates disconnected. Reconnecting...");
-			}
+			if (!active) return;
+			setError("Live updates disconnected. Reconnecting...");
+			// An expired session turns the stream into a 401 the browser would
+			// retry forever, so confirm and bounce to the login page instead.
+			void getSessionState()
+				.then((state) => {
+					if (!active) return;
+					if (state.access.requireLogin && !state.isAuthenticated) {
+						source.close();
+						window.location.href = "/login";
+					}
+				})
+				.catch(() => {
+					// Server unreachable — let EventSource keep retrying.
+				});
 		};
 
 		return () => {
@@ -217,6 +234,7 @@ function Home() {
 					title="Torrent board"
 					subtitle="A calmer home view for queue status, health, and live swarm detail."
 				>
+					<SessionBar session={session} />
 					<div className="tide-hero-row">
 						<div className="tide-metrics-grid tide-metrics-grid--wide">
 							<MetricCard label="Active" value={String(totals.activeCount)} />

@@ -1158,8 +1158,11 @@ export function getGlobalSettings() {
 }
 
 export function getAppSettingsSummary() {
-	const authUsername = process.env.TIDE_AUTH_USERNAME?.trim() ?? "";
-	const authPassword = process.env.TIDE_AUTH_PASSWORD?.trim() ?? "";
+	// Only whether basic auth is on — never the username, which used to leak to
+	// every caller of GET /api/torrents/control.
+	const basicAuthEnabled = Boolean(
+		process.env.TIDE_AUTH_USERNAME?.trim() && process.env.TIDE_AUTH_PASSWORD?.trim(),
+	);
 	const summary: AppTorrentSettingsSummary = {
 		downloadsDirectory: downloadsPath,
 		downloadsEnvVar: process.env.TIDE_DOWNLOADS_DIR?.trim()
@@ -1168,8 +1171,7 @@ export function getAppSettingsSummary() {
 				? "TORRENT_DOWNLOADS_DIR"
 				: "TIDE_DOWNLOADS_DIR",
 		databasePath: getDatabaseLocation(),
-		basicAuthEnabled: Boolean(authUsername && authPassword),
-		basicAuthUsername: authUsername || null,
+		basicAuthEnabled,
 		memoryGuardEnabled: memoryGuardSettings.enabled,
 		memoryGuardSource: memoryGuardSettings.source,
 		memoryGuardLimitMb: bytesToWholeMiB(memoryGuardSettings.limitBytes),
