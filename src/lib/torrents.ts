@@ -117,6 +117,18 @@ export interface TorrentSnapshot {
 	files: TorrentFileSnapshot[];
 	control: TorrentControlState;
 	details: TorrentDetailSnapshot;
+	/**
+	 * Where this torrent's content sits relative to Tide's downloads root —
+	 * the top-level directory or file, e.g. `Some.Release.2019.1080p-GRP`.
+	 *
+	 * Null until the torrent finishes and has been moved into the completed
+	 * directory, because before that it is not there.
+	 *
+	 * Exposed so a consumer does not have to re-derive Tide's directory
+	 * layout from the file list, which would be exactly the coupling these
+	 * contracts exist to avoid.
+	 */
+	rootRelativePath: string | null;
 }
 
 interface ListResponse {
