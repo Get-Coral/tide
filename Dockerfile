@@ -1,4 +1,4 @@
-FROM node:22.14-bookworm-slim AS base
+FROM node:24-bookworm-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -22,7 +22,7 @@ RUN pnpm install --prod --frozen-lockfile
 COPY stubs/node-datachannel/index.js \
      ./node_modules/.pnpm/node-datachannel@0.32.2/node_modules/node-datachannel/dist/esm/lib/node-datachannel.mjs
 
-FROM node:22.14-bookworm-slim AS runner
+FROM node:24-bookworm-slim AS runner
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
