@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0](https://github.com/Get-Coral/tide/compare/v1.3.0...v1.4.0) (2026-09-26)
+
+
+### Features
+
+* let other Coral modules read Tide's downloads ([#39](https://github.com/Get-Coral/tide/issues/39)) ([69ccda8](https://github.com/Get-Coral/tide/commit/69ccda8664c315553b33b27623c2d097ff493028))
+
+
+### Bug Fixes
+
+* confine a caller-supplied download path to Tide's directories ([#38](https://github.com/Get-Coral/tide/issues/38)) ([652f448](https://github.com/Get-Coral/tide/commit/652f44883423aeaee6719dc7481bebcfaf9c18c5))
+
 ## [1.3.0](https://github.com/Get-Coral/tide/compare/v1.2.0...v1.3.0) (2026-09-26)
 
 
