@@ -944,7 +944,26 @@ export function toTorrentSnapshot(torrent: WebTorrent.Torrent): TorrentSnapshot 
 		files,
 		control,
 		details: toDetailSnapshot(internalTorrent, files),
+		rootRelativePath: getRootRelativePath(torrent),
 	};
+}
+
+/**
+ * The top-level entry this torrent occupies inside the completed directory.
+ *
+ * Same computation `moveToComplete` uses to decide what to move, so the two
+ * cannot disagree about what a torrent is called on disk. Null while the
+ * torrent is still in the incomplete directory: there is nothing at the
+ * completed path to point at yet.
+ */
+function getRootRelativePath(torrent: WebTorrent.Torrent): string | null {
+	if (torrent.path !== downloadsPath) return null;
+
+	const firstFile = torrent.files[0] as InternalFile | undefined;
+	if (!firstFile) return null;
+
+	const topLevel = firstFile.path.split(path.sep)[0];
+	return topLevel || null;
 }
 
 function getTorrentSnapshotState(
@@ -1023,6 +1042,8 @@ function moveToComplete(torrent: WebTorrent.Torrent) {
 	const firstFile = torrent.files[0] as InternalFile;
 	// file.path is relative to torrent.path (e.g. "MovieName/ep1.mkv"), not absolute.
 	// Take the first path segment to get the top-level dir/file to move.
+	// `getRootRelativePath` reports this same value on the snapshot; the two
+	// have to stay in step or a consumer will look in the wrong place.
 	const topLevel = firstFile.path.split(path.sep)[0];
 	const src = path.join(torrent.path, topLevel);
 	const dst = path.join(downloadsPath, topLevel);
