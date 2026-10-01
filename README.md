@@ -67,7 +67,10 @@ pnpm test       # Run tests
 ## Docker
 
 ```bash
-# Build
+# Pull the published image
+docker pull getcoral/tide:latest
+
+# Or build it yourself
 docker build -t tide .
 
 # Run
@@ -78,7 +81,7 @@ docker run -p 3000:3000 \
   -e TIDE_MEMORY_RESUME_MB=6144 \
   -e TIDE_AUTH_USERNAME=admin \
   -e TIDE_AUTH_PASSWORD=change-me \
-  tide
+  getcoral/tide:latest
 ```
 
 ## Access control
